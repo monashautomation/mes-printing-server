@@ -1,0 +1,9 @@
+pydantic
+requests
+fastapi
+sqlalchemy
+sqlmodel
+asyncua
+python-multipart
+uvicorn[standard]
+psycopg2-binary
