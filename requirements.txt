@@ -1,5 +1,6 @@
 pydantic
 requests
+aiohttp
 fastapi
 sqlalchemy
 sqlmodel
