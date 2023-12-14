@@ -3,7 +3,7 @@ from pathlib import Path
 
 from aiohttp import ClientSession, FormData
 
-from models import CurrentPrinterStatus, CurrentJob, TemperatureState
+from .models import CurrentPrinterStatus, CurrentJob, TemperatureState
 
 
 class PrinterStateError(Exception):
