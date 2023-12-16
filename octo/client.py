@@ -23,9 +23,11 @@ class OctoClient:
         await self.session.close()
 
     async def __aenter__(self):
+        await self.connect()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.disconnect()
         await self.close()
 
     async def connect(self) -> None:
