@@ -113,7 +113,8 @@ class File(BaseModel):
         description="Type of file. model or machinecode. "
         "Or folder if it’s a folder, in which case the children node will be populated",
     )
-    type_path: list[str] = Field(
+    type_path: list[str] | None = Field(
+        default=None,
         alias="typePath",
         examples=[["machinecode", "gcode"], ["model", "stl"], ["folder"]],
         description="Path to type of file in extension tree. "
@@ -148,8 +149,8 @@ class Progress(BaseModel):
     )
     printTime: int = Field(description="Time already spent printing, in seconds")
     printTimeLeft: int = Field(description="Estimate of time left to print, in seconds")
-    printTimeLeftOrigin: str = Field(
-        default="linear",
+    printTimeLeftOrigin: str | None = Field(
+        default=None,
         description="Origin of the current time left estimate. Can currently be either of:"
         "linear, analysis, estimate, average, mixed-analysis, mixed-average",
     )

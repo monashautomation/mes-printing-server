@@ -2,7 +2,7 @@ import asyncio
 import logging
 import math
 from datetime import datetime
-from enum import StrEnum, Enum, auto
+from enum import StrEnum
 from logging import Logger
 from typing import Callable, Awaitable
 
@@ -31,8 +31,8 @@ class JobState(StrEnum):
     Error = "Error"  # printer state is error
 
 
-class JobEvent(Enum):
-    Cancel = auto()
+class JobEvent(StrEnum):
+    Cancel = "Cancel"
 
 
 def _is_heating_complete(temp: TemperatureData) -> bool:
@@ -73,8 +73,10 @@ class JobWorker:
         if not self.event_queue.empty():
             event = self.event_queue.get_nowait()
             assert event is JobEvent.Cancel
+            self.logger.info("handle event: %s", event)
             await self.on_cancel()
         else:
+            self.logger.info("job state: %s", self.state)
             match self.state:
                 case JobState.Connecting:
                     await self.when_connecting()
@@ -100,7 +102,7 @@ class JobWorker:
             await self.octo.connect()
             self.state = JobState.Connected
         except ValueError:
-            logging.error("connect param is invalid")
+            self.logger.error("connect param is invalid")
 
     async def when_connected(self) -> None:
         try:
@@ -116,7 +118,14 @@ class JobWorker:
     async def when_ready(self) -> None:
         order: Order = await mes.next_printing_order()  # get from the queue system
 
+        if order is None:
+            self.logger.info("no pending orders")
+            return
+
         self.current_job = await self._create_job(order)
+
+        file_path = self.current_job.order.gcode_file_path
+        await self.octo.upload_file_to_print(file_path)
 
         self.state = JobState.Heating
 
@@ -127,15 +136,17 @@ class JobWorker:
 
         await self._update_opcua_printer_temp(bed=bed, nozzle=nozzle)
 
+        self.logger.info("current temperature: bed=%r, nozzle=%r", bed, nozzle)
+
         if _is_heating_complete(bed) and _is_heating_complete(nozzle):
-            file_path = self.current_job.order.gcode_file_path
-            await self.octo.upload_file_to_print(file_path)
             self.state = JobState.Printing
 
     async def when_printing(self) -> None:
         job_status: CurrentJob = await self.octo.current_job()
 
         await self._update_opcua_printer_job(job_status)
+
+        self.logger.info("printing progress: %f", job_status.progress.completion)
 
         if job_status.progress.completion == 100:
             self.state = JobState.Printed
@@ -163,9 +174,7 @@ class JobWorker:
 
     async def on_cancel(self) -> None:
         match self.state:
-            case JobState.Heating:
-                self.state = JobState.Connecting  # wait until printer is ready
-            case JobState.Printing:
+            case JobState.Heating | JobState.Printing:
                 await self.octo.cancel()
                 self.state = JobState.Connecting  # wait until printer is ready
             case JobState.Printed | JobState.WaitingForPickup:
@@ -186,7 +195,7 @@ class JobWorker:
             await session.commit()
             await session.refresh(job)
 
-            return job
+            return await self._get_job_by_id(job.job_id)
 
     async def _update_finished_job(self, job: Job) -> None:
         job.end_time = datetime.now()
