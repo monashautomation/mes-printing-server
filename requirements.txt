@@ -8,3 +8,5 @@ asyncua
 python-multipart
 uvicorn[standard]
 asyncpg
+pytest
+pytest-asyncio
