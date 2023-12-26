@@ -7,7 +7,7 @@ from opcua.types import OpcuaObject, OpcuaVariable
 
 
 class Foo(OpcuaObject):
-    name = OpcuaVariable(name='Foo_Name', default='default')
+    name = OpcuaVariable(name="Foo_Name", default="default")
 
 
 class MockClientGetObjectTest(unittest.TestCase):
@@ -20,80 +20,77 @@ class MockClientGetObjectTest(unittest.TestCase):
 
 
 class MockClientQueryTest(unittest.IsolatedAsyncioTestCase):
-
     async def test_get_default(self):
         client = MockOpcuaClient()
-        namespace = 'ns=3;s=Foo_Name'
-        value = await client.get(namespace, default='default')
+        namespace = "ns=3;s=Foo_Name"
+        value = await client.get(namespace, default="default")
 
-        self.assertEqual(value, 'default')
-        self.assertEqual(client.table[namespace], 'default')
+        self.assertEqual(value, "default")
+        self.assertEqual(client.table[namespace], "default")
 
     async def test_get(self):
         client = MockOpcuaClient()
-        namespace = 'ns=3;s=Foo_Name'
-        client.table[namespace] = 'foobar'
+        namespace = "ns=3;s=Foo_Name"
+        client.table[namespace] = "foobar"
 
         value = await client.get(namespace)
 
-        self.assertEqual(value, 'foobar')
+        self.assertEqual(value, "foobar")
 
     async def test_set(self):
         client = MockOpcuaClient()
-        namespace = 'ns=3;s=Foo_Name'
+        namespace = "ns=3;s=Foo_Name"
 
-        await client.set(namespace, 'foobar')
+        await client.set(namespace, "foobar")
 
-        self.assertEqual(client.table[namespace], 'foobar')
+        self.assertEqual(client.table[namespace], "foobar")
 
 
 class MockOpcuaObjectTest(unittest.IsolatedAsyncioTestCase):
-
     async def test_get_default(self):
         client = MockOpcuaClient()
         obj = client.get_object(Foo, namespace_idx=3)
 
         value = await obj.name.get()
 
-        self.assertEqual(value, 'default')
-        self.assertEqual(client.table['ns=3;s=Foo_Name'], 'default')
+        self.assertEqual(value, "default")
+        self.assertEqual(client.table["ns=3;s=Foo_Name"], "default")
 
     async def test_get(self):
         client = MockOpcuaClient()
         obj = client.get_object(Foo, namespace_idx=3)
 
-        client.table['ns=3;s=Foo_Name'] = 'foobar'
+        client.table["ns=3;s=Foo_Name"] = "foobar"
 
         value = await obj.name.get()
 
-        self.assertEqual(value, 'foobar')
+        self.assertEqual(value, "foobar")
 
     async def test_set(self):
         client = MockOpcuaClient()
         obj = client.get_object(Foo, namespace_idx=3)
 
-        client.table['ns=3;s=Foo_Name'] = 'foobar'
+        client.table["ns=3;s=Foo_Name"] = "foobar"
 
         value = await obj.name.get()
 
-        self.assertEqual(value, 'foobar')
+        self.assertEqual(value, "foobar")
 
 
 class MultipleMockOpcuaObjectTest(unittest.IsolatedAsyncioTestCase):
-
     async def test_mutation(self):
         client = MockOpcuaClient()
         foo1 = client.get_object(Foo, namespace_idx=1)
         foo2 = client.get_object(Foo, namespace_idx=2)
 
-        await foo1.name.set('foo1')
-        await foo2.name.set('foo2')
+        await foo1.name.set("foo1")
+        await foo2.name.set("foo2")
 
         name1 = await foo1.name.get()
         name2 = await foo2.name.get()
 
-        self.assertEqual(name1, 'foo1')
-        self.assertEqual(name2, 'foo2')
+        self.assertEqual(name1, "foo1")
+        self.assertEqual(name2, "foo2")
 
     async def test_concurrent_set(self):
         client = MockOpcuaClient(delay=0.25)
@@ -107,15 +104,15 @@ class MultipleMockOpcuaObjectTest(unittest.IsolatedAsyncioTestCase):
             return await foo.name.get()  # 0.25s
 
         async with asyncio.TaskGroup() as group:
-            task1 = group.create_task(update_name(foo1, 'foo1'))
-            task2 = group.create_task(update_name(foo2, 'foo2'))
+            task1 = group.create_task(update_name(foo1, "foo1"))
+            task2 = group.create_task(update_name(foo2, "foo2"))
 
         sec_used = (datetime.now() - start_time).total_seconds()
 
-        self.assertEqual(task1.result(), 'foo1')
-        self.assertEqual(task2.result(), 'foo2')
+        self.assertEqual(task1.result(), "foo1")
+        self.assertEqual(task2.result(), "foo2")
         self.assertLess(sec_used, 0.6)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

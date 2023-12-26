@@ -1,6 +1,1 @@
-__all__ = [
-    'types',
-    'client',
-    'objects',
-    'mock'
-]
+__all__ = ["types", "client", "objects", "mock"]
