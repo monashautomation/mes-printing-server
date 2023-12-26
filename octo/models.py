@@ -123,8 +123,8 @@ class File(BaseModel):
 
 
 class Job(BaseModel):
-    file: File = Field(
-        description="The file that is the target of the current print job"
+    file: File | None = Field(
+        default=None, description="The file that is the target of the current print job"
     )
     estimatedPrintTime: float | None = Field(
         default=None, description="The estimated print time for the file, in seconds."
@@ -140,15 +140,19 @@ class Job(BaseModel):
 
 
 class Progress(BaseModel):
-    completion: float = Field(
-        description="Percentage of completion of the current print job"
+    completion: float | None = Field(
+        default=None, description="Percentage of completion of the current print job"
     )
-    filepos: int = Field(
-        default=0,
+    filepos: int | None = Field(
+        default=None,
         description="Current position in the file being printed, in bytes from the beginning",
     )
-    printTime: int = Field(description="Time already spent printing, in seconds")
-    printTimeLeft: int = Field(description="Estimate of time left to print, in seconds")
+    printTime: int | None = Field(
+        default=None, description="Time already spent printing, in seconds"
+    )
+    printTimeLeft: int | None = Field(
+        default=None, description="Estimate of time left to print, in seconds"
+    )
     printTimeLeftOrigin: str | None = Field(
         default=None,
         description="Origin of the current time left estimate. Can currently be either of:"
