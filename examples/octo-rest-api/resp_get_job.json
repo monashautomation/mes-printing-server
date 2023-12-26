@@ -1,0 +1,30 @@
+{
+    "job": {
+        "averagePrintTime": 29.191428359999975,
+        "estimatedPrintTime": 93.40379316169698,
+        "filament": {
+            "tool0": {
+                "length": 126.81908,
+                "volume": 0.0
+            }
+        },
+        "file": {
+            "date": 1702136955,
+            "display": "b.gcode",
+            "name": "b.gcode",
+            "origin": "local",
+            "path": "b.gcode",
+            "size": 60337
+        },
+        "lastPrintTime": 31.456750350999755,
+        "user": "_api"
+    },
+    "progress": {
+        "completion": 100.0,
+        "filepos": 60337,
+        "printTime": 31,
+        "printTimeLeft": 0,
+        "printTimeLeftOrigin": null
+    },
+    "state": "Operational"
+}

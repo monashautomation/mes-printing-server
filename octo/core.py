@@ -1,19 +1,57 @@
 import logging
 from pathlib import Path
+from typing import TypeVar
 
 from aiohttp import ClientSession, FormData
 
-from .models import CurrentPrinterStatus, CurrentJob, TemperatureState
+from octo.error import (
+    InvalidConnectionParam,
+    CannotPrint,
+    InvalidAxis,
+    InvalidUploadParam,
+    InvalidUploadLocation,
+    InvalidFileExtension,
+)
+from octo.models import CurrentPrinterStatus, CurrentJob, TemperatureState
 
 
-class PrinterStateError(Exception):
-    def __init__(self, *args):
-        super().__init__("operation is not supported by current printer state", *args)
-
-
-class OctoClient:
+class BaseOctoClient:
     def __init__(self, host: str, api_key: str, port: int = 5000):
-        self.host: str = host
+        self.host = host
+        self.api_key = api_key
+        self.port = port
+
+    async def connect(self) -> None:
+        pass
+
+    async def disconnect(self) -> None:
+        pass
+
+    async def current_printer_status(self) -> CurrentPrinterStatus:
+        pass
+
+    async def current_temperature(self) -> TemperatureState:
+        pass
+
+    async def head_jog(self, x: float, y: float, z: float) -> None:
+        pass
+
+    async def upload_file_to_print(self, file_path: str) -> None:
+        pass
+
+    async def current_job(self) -> CurrentJob:
+        pass
+
+    async def cancel(self) -> None:
+        pass
+
+
+OctoprintClient = TypeVar("OctoprintClient", bound="BaseOctoClient")
+
+
+class OctoRestClient(BaseOctoClient):
+    def __init__(self, host: str, api_key: str, port: int = 5000):
+        super().__init__(host, api_key, port)
         self.session: ClientSession = ClientSession(
             base_url=f"http://{host}:{port}", headers={"X-Api-Key": api_key}
         )
@@ -39,7 +77,7 @@ class OctoClient:
                 case 204:
                     pass
                 case 400:
-                    raise ValueError("selected port or baudrate is not available")
+                    raise InvalidConnectionParam()
 
     async def disconnect(self) -> None:
         async with self.session.post(
@@ -50,14 +88,14 @@ class OctoClient:
                 case 204:
                     pass
                 case 400:
-                    raise ValueError("selected port or baudrate is not available")
+                    raise InvalidConnectionParam()
 
     async def current_printer_status(self) -> CurrentPrinterStatus:
         async with self.session.get("/api/printer") as resp:
             self.logger.info("printer-status %d", resp.status)
             match resp.status:
                 case 409:
-                    raise PrinterStateError("Printer is not operational")
+                    raise CannotPrint()
                 case 200:
                     return CurrentPrinterStatus.model_validate_json(await resp.text())
 
@@ -70,9 +108,9 @@ class OctoClient:
                 case 204:
                     pass
                 case 400:
-                    raise ValueError("Invalid axis specified")
+                    raise InvalidAxis()
                 case 409:
-                    raise PrinterStateError("Printer is not operational or is printing")
+                    raise CannotPrint()
 
     async def current_temperature(self) -> TemperatureState:
         printer_status = await self.current_printer_status()
@@ -95,34 +133,24 @@ class OctoClient:
                 case 201:
                     pass
                 case 400:
-                    raise ValueError("invalid parameters")
+                    raise InvalidUploadParam()
                 case 404:
-                    raise ValueError(
-                        "location is neither local nor sdcard, "
-                        "or trying to upload to SD card and SD card support is disabled"
-                    )
+                    raise InvalidUploadLocation()
                 case 409:
-                    raise ValueError(
-                        "the upload of the file would override the file that is currently being printed,"
-                        "or an upload to SD card was requested and the printer is either not operational "
-                        "or currently busy with a print job"
-                    )
+                    raise CannotPrint()
                 case 415:
-                    raise ValueError("file must be a gcode or stl")
+                    raise InvalidFileExtension()
 
     async def current_job(self) -> CurrentJob:
         async with self.session.get("/api/job") as resp:
             self.logger.info("job-info %d", resp.status)
             return CurrentJob.model_validate_json(await resp.text())
 
-    async def cancel(self):
+    async def cancel(self) -> None:
         async with self.session.post("/api/job", json={"command": "cancel"}) as resp:
             self.logger.info("cancel-job %d", resp.status)
             match resp.status:
                 case 204:
                     pass
                 case 409:
-                    raise PrinterStateError(
-                        "printer is not operational "
-                        "or the current print job state does not match the preconditions for the command"
-                    )
+                    raise CannotPrint()
