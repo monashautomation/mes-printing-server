@@ -1,0 +1,47 @@
+### Connect
+POST http://{{host}}:{{port}}/api/connection
+X-Api-Key: {{api-key}}
+Content-Type: application/json
+
+{
+  "command": "connect"
+}
+
+### Get Printer State
+GET http://{{host}}:{{port}}/api/printer
+X-Api-Key: {{api-key}}
+
+### Get Current Job
+GET http://{{host}}:{{port}}/api/job
+X-Api-Key: {{api-key}}
+
+### Cancel Current Job
+POST http://{{host}}:{{port}}/api/job
+X-Api-Key: {{api-key}}
+Content-Type: application/json
+
+{
+  "command": "cancel"
+}
+
+### Upload and Print GCode
+POST http://{{host}}:{{port}}/api/files/local
+X-Api-Key: {{api-key}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="select"
+Content-Type: text/plain
+
+true
+--WebAppBoundary
+Content-Disposition: form-data; name="print"
+Content-Type: text/plain
+
+true
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="A.gcode"
+Content-Type: application/json
+
+< ../A.gcode
+--WebAppBoundary--
