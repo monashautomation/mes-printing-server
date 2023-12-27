@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 from _pytest.fixtures import FixtureRequest
 
@@ -11,6 +13,7 @@ from tests.conftest import PrinterHost
 async def printer1(request: FixtureRequest) -> MockOctoClient:
     client = MockOctoClient(host=PrinterHost.Host1)
     await client.connect()
+    request.addfinalizer(lambda: asyncio.run(client.disconnect()))
     return client
 
 

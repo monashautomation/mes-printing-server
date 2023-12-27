@@ -1,4 +1,7 @@
+import asyncio
+
 import pytest
+from _pytest.fixtures import FixtureRequest
 
 from opcua.mock import MockOpcuaClient
 from opcua.types import OpcuaObject, OpcuaVariable
@@ -9,9 +12,10 @@ class Printer(OpcuaObject):
 
 
 @pytest.fixture
-async def opcua_client() -> MockOpcuaClient:
+async def opcua_client(request: FixtureRequest) -> MockOpcuaClient:
     client = MockOpcuaClient()
     await client.connect()
+    request.addfinalizer(lambda: asyncio.run(client.disconnect()))
     return client
 
 
