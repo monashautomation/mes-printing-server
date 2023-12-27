@@ -4,7 +4,6 @@ from opcua.types import BaseOpcuaClient, OpcuaValue
 
 
 class OpcuaClient(BaseOpcuaClient):
-
     def __init__(self, url: str):
         self.client = Client(url=url)
 

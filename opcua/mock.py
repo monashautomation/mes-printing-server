@@ -5,7 +5,6 @@ from opcua.types import OpcuaValue
 
 
 class MockOpcuaClient(BaseOpcuaClient):
-
     def __init__(self, delay: float = 0.1):
         self.table = {}
         self.delay: float = delay
