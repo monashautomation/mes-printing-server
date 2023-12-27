@@ -1,4 +1,4 @@
-from models import Order
+from db.models import Order
 
 
 async def next_printing_order() -> Order:
