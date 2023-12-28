@@ -3,8 +3,8 @@ import asyncio
 import pytest
 from _pytest.fixtures import FixtureRequest
 
-from opcua.mock import MockOpcuaClient
-from opcua.types import OpcuaObject, OpcuaVariable
+from opcuax.mock import MockOpcuaClient
+from opcuax.types import OpcuaObject, OpcuaVariable
 
 
 class Printer(OpcuaObject):

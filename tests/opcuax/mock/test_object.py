@@ -3,8 +3,8 @@ from datetime import datetime
 
 import pytest
 
-from opcua.mock import MockOpcuaClient
-from tests.opcua.mock.conftest import Printer
+from opcuax.mock import MockOpcuaClient
+from tests.opcuax.mock.conftest import Printer
 
 
 @pytest.mark.asyncio

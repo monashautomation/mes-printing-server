@@ -1,5 +1,5 @@
 from octo.models import TemperatureData, CurrentJob
-from opcua.objects import OpcuaPrinter
+from opcuax.objects import OpcuaPrinter
 
 
 class OpcuaPrinterUpdator:
