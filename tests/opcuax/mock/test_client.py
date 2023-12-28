@@ -3,8 +3,7 @@ import pytest
 from opcuax.types import BaseOpcuaClient
 
 
-@pytest.mark.asyncio
-async def test_context_variables_are_set(opcua_printer1):
+def test_context_variables_are_set(opcua_printer1):
     printer = opcua_printer1
     assert printer.__client__ is not None
     assert isinstance(printer.__client__, BaseOpcuaClient)
@@ -12,31 +11,29 @@ async def test_context_variables_are_set(opcua_printer1):
 
 
 @pytest.mark.asyncio
-async def test_get_default_value(opcua_client):
-    namespace = "ns=1;s=Printer_Name"
+async def test_get_default_value(opcua_client, printer1_name_node):
+    node_id, _ = printer1_name_node
     default_value = "unknown"
 
-    value = await opcua_client.get(namespace, default=default_value)
+    value = await opcua_client.get(node_id, default=default_value)
 
     assert value == default_value
-    assert opcua_client.table[namespace] == default_value
+    assert opcua_client.table[node_id] == default_value
 
 
 @pytest.mark.asyncio
-async def test_get(opcua_client):
-    namespace = "ns=1;s=Printer_Name"
-    value = "foobar"
+async def test_get(opcua_client, printer1_name_node):
+    node_id, name = printer1_name_node
 
-    opcua_client.table[namespace] = value
+    opcua_client.table[node_id] = name
 
-    assert (await opcua_client.get(namespace)) == value
+    actual = await opcua_client.get(node_id)
+    assert actual == name
 
 
 @pytest.mark.asyncio
-async def test_set(opcua_client):
-    namespace = "ns=1;s=Printer_Name"
-    value = "foobar"
+async def test_set(opcua_client, printer1_name_node):
+    node_id, name = printer1_name_node
 
-    await opcua_client.set(namespace, value)
-
-    assert opcua_client.table[namespace] == value
+    await opcua_client.set(node_id, name)
+    assert opcua_client.table[node_id] == name
