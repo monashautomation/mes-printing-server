@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "mes-printing-server"
+version = "0.1.0"
+description = "printing server of the MES system"
+authors = ["Jicheng Zhi <jzhi0004@student.monash.edu>"]
+license = "MIT"
+readme = "README.md"
+packages = [
+    { include = "opcuax", from = "src" },
+    { include = "octo", from = "src" },
+    { include = "db", from = "src" },
+    { include = "worker", from = "src" },
+    { include = "api", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pydantic = "^2.5.3"
+aiohttp = "^3.9.1"
+SQLAlchemy = "^2.0.23"
+asyncua = "^1.0.6"
+asyncpg = "^0.29.0"
+Quart = "^0.19.4"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.12.1"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.3"
+pytest-asyncio = "^0.23.2"
+
+[tool.poetry.scripts]
+start = "api:run"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
