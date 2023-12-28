@@ -8,7 +8,7 @@ import mes
 from db.core import DatabaseSession
 from db.models import Order
 from octo import OctoprintClient
-from opcua.objects import OpcuaPrinter
+from opcuax.objects import OpcuaPrinter
 from worker.opcua import OpcuaPrinterUpdator
 
 

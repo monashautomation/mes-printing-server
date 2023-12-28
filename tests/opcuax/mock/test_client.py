@@ -1,6 +1,6 @@
 import pytest
 
-from opcua.types import BaseOpcuaClient
+from opcuax.types import BaseOpcuaClient
 
 
 @pytest.mark.asyncio

@@ -1,6 +1,6 @@
 from asyncua import Client, ua
 
-from opcua.types import BaseOpcuaClient, OpcuaValue
+from opcuax.types import BaseOpcuaClient, OpcuaValue
 
 
 class OpcuaClient(BaseOpcuaClient):

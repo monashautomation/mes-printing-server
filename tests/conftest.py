@@ -6,9 +6,9 @@ from _pytest.fixtures import FixtureRequest
 
 from db.core import Database, DatabaseSession
 from db.models import User, Order
-from octo.mock import MockOctoClient
-from opcua.mock import MockOpcuaClient
-from opcua.objects import OpcuaPrinter
+from octo import MockOctoClient
+from opcuax.mock import MockOpcuaClient
+from opcuax.objects import OpcuaPrinter
 from tests.config import PrinterHost, GcodeFile
 
 
