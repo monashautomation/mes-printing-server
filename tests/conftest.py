@@ -69,18 +69,30 @@ def admin_printed_order(admin_user) -> Order:
 
 
 @pytest.fixture
+def admin_approved_order2(admin_user) -> Order:
+    return Order(
+        id=5,
+        user_id=admin_user.id,
+        gcode_file_path=GcodeFile.A,
+        printer_ip=PrinterHost.Host1,
+        approval_time=datetime(2023, 11, 2, 12, 0, 0),
+    )
+
+
+@pytest.fixture
 def admin_orders(
-    admin_user,
     admin_new_order,
     admin_approved_order,
     admin_printing_order,
     admin_printed_order,
+    admin_approved_order2,
 ) -> list[Order]:
     return [
         admin_new_order,
         admin_approved_order,
         admin_printing_order,
         admin_printed_order,
+        admin_approved_order2,
     ]
 
 

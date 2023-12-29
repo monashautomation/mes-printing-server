@@ -67,7 +67,7 @@ class DatabaseSession(AsyncSession):
                 Order.approval_time.isnot(None),
                 Order.print_start_time.is_(None),
             )
-            .order_by(Order.create_time.desc())
+            .order_by(Order.create_time)
         )
         result = await self.scalars(statement)
 
