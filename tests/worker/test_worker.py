@@ -1,15 +1,14 @@
 import pytest
 
-from worker import WorkerEvent, WorkerState
-from worker.core import event_handlers, state_handlers
+from worker import WorkerEvent, WorkerState, PrinterWorker
 
 
 def test_all_events_have_handlers():
-    assert all([e in event_handlers for e in WorkerEvent])
+    assert all(e in PrinterWorker.event_handlers for e in WorkerEvent)
 
 
 def test_all_states_have_handlers():
-    assert all([e in state_handlers for e in WorkerState])
+    assert all(e in PrinterWorker.state_handlers for e in WorkerState)
 
 
 @pytest.mark.asyncio

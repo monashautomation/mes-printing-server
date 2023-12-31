@@ -33,16 +33,16 @@ class WorkerEvent(StrEnum):
 
 
 StateHandler = Callable[["PrinterWorker"], Awaitable[None]]
-state_handlers: dict[WorkerState, StateHandler] = {}
-
 EventHandler = Callable[["PrinterWorker"], Awaitable[None]]
-event_handlers: dict[WorkerEvent, EventHandler] = {}
 
 OrderFetcher = Callable[[], Awaitable[Optional[Order]]]
 PickupNotifier = Callable[[str], Awaitable[None]]
 
 
 class PrinterWorker:
+    state_handlers: dict[WorkerState, StateHandler] = {}
+    event_handlers: dict[WorkerEvent, EventHandler] = {}
+
     def __init__(
         self,
         session: DatabaseSession,
@@ -60,8 +60,6 @@ class PrinterWorker:
         self.current_order: Order | None = None
 
         self._event_queue: asyncio.Queue = asyncio.Queue()
-        self._state_handlers = state_handlers
-        self._event_handlers = event_handlers
 
         self.order_fetcher = order_fetcher
         self.pickup_notifier = pickup_notifier
@@ -79,12 +77,28 @@ class PrinterWorker:
             await self.handle_state()
 
     async def handle_state(self):
-        handler = self._state_handlers[self.state]
+        handler = PrinterWorker.state_handlers[self.state]
         await handler(self)
 
     async def handle_event(self, event: WorkerEvent):
-        handler = self._event_handlers[event]
+        handler = PrinterWorker.event_handlers[event]
         await handler(self)
+
+    @staticmethod
+    def state_handler(state: WorkerState) -> Callable[[StateHandler], StateHandler]:
+        def register_handler(handler: StateHandler) -> StateHandler:
+            PrinterWorker.state_handlers[state] = handler
+            return handler
+
+        return register_handler
+
+    @staticmethod
+    def event_handler(event: WorkerEvent) -> Callable[[EventHandler], EventHandler]:
+        def register_handler(handler: EventHandler) -> EventHandler:
+            PrinterWorker.event_handlers[event] = handler
+            return handler
+
+        return register_handler
 
     def put_event(self, event: WorkerEvent):
         self._event_queue.put_nowait(event)
@@ -94,19 +108,3 @@ class PrinterWorker:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.session.close()
-
-
-def state_handler(state: WorkerState) -> Callable[[StateHandler], StateHandler]:
-    def register_handler(handler: StateHandler) -> StateHandler:
-        state_handlers[state] = handler
-        return handler
-
-    return register_handler
-
-
-def event_handler(event: WorkerEvent) -> Callable[[EventHandler], EventHandler]:
-    def register_handler(handler: EventHandler) -> EventHandler:
-        event_handlers[event] = handler
-        return handler
-
-    return register_handler
