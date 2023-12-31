@@ -1,7 +1,7 @@
 import asyncio
-from datetime import datetime
 
 import pytest
+from async_timeout import timeout
 
 from opcuax.mock import MockOpcuaClient
 from tests.opcuax.mock.conftest import Printer
@@ -53,18 +53,14 @@ async def test_concurrent_set():
     printer1 = client.get_object(Printer, namespace_idx=1)
     printer2 = client.get_object(Printer, namespace_idx=2)
 
-    start_time = datetime.now()
-
     async def update_name(foo: Printer, name: str):
         await foo.name.set(name)  # 0.25s
         return await foo.name.get()  # 0.25s
 
-    async with asyncio.TaskGroup() as group:
-        task1 = group.create_task(update_name(printer1, "printer1"))
-        task2 = group.create_task(update_name(printer2, "printer2"))
-
-    sec_used = (datetime.now() - start_time).total_seconds()
+    async with timeout(0.6):
+        async with asyncio.TaskGroup() as group:
+            task1 = group.create_task(update_name(printer1, "printer1"))
+            task2 = group.create_task(update_name(printer2, "printer2"))
 
     assert task1.result() == "printer1"
     assert task2.result() == "printer2"
-    assert sec_used < 0.6
