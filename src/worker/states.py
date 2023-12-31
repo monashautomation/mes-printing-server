@@ -1,16 +1,16 @@
 from db.models import Order
 from octo.models import CurrentJob
-from worker.core import state_handler, WorkerState, PrinterWorker, WorkerEvent
+from worker.core import WorkerState, PrinterWorker, WorkerEvent
 from worker.helper import parse_printer_state, is_heating_complete
 
 
-@state_handler(WorkerState.Connecting)
+@PrinterWorker.state_handler(WorkerState.Connecting)
 async def when_connecting(worker: PrinterWorker) -> None:
     await worker.octo.connect()
     worker.state = WorkerState.Connected
 
 
-@state_handler(WorkerState.Connected)
+@PrinterWorker.state_handler(WorkerState.Connected)
 async def when_connected(worker: PrinterWorker) -> None:
     printer_status = await worker.octo.current_printer_status()
 
@@ -38,7 +38,7 @@ async def when_connected(worker: PrinterWorker) -> None:
             )
 
 
-@state_handler(WorkerState.Ready)
+@PrinterWorker.state_handler(WorkerState.Ready)
 async def when_ready(worker: PrinterWorker) -> None:
     order: Order = await worker.order_fetcher()  # get from the queue system
 
@@ -53,7 +53,7 @@ async def when_ready(worker: PrinterWorker) -> None:
     worker.state = WorkerState.Heating
 
 
-@state_handler(WorkerState.Heating)
+@PrinterWorker.state_handler(WorkerState.Heating)
 async def when_heating(worker: PrinterWorker) -> None:
     temp_data = await worker.octo.current_temperature()
     bed = temp_data.bed
@@ -67,7 +67,7 @@ async def when_heating(worker: PrinterWorker) -> None:
         worker.state = WorkerState.Printing
 
 
-@state_handler(WorkerState.Printing)
+@PrinterWorker.state_handler(WorkerState.Printing)
 async def when_printing(worker: PrinterWorker) -> None:
     job_status: CurrentJob = await worker.octo.current_job()
 
@@ -79,7 +79,7 @@ async def when_printing(worker: PrinterWorker) -> None:
         worker.state = WorkerState.Printed
 
 
-@state_handler(WorkerState.Printed)
+@PrinterWorker.state_handler(WorkerState.Printed)
 async def when_printed(worker: PrinterWorker) -> None:
     await worker.octo.head_jog(x=0, y=0, z=30)
     await worker.session.finish_printing(worker.current_order)
@@ -91,17 +91,17 @@ async def when_printed(worker: PrinterWorker) -> None:
     worker.state = WorkerState.WaitingForPickup
 
 
-@state_handler(WorkerState.WaitingForPickup)
+@PrinterWorker.state_handler(WorkerState.WaitingForPickup)
 async def when_waiting_for_pickup(worker: PrinterWorker) -> None:
     worker.logger.info("waiting for robot to pickup the printed model")
 
 
-@state_handler(WorkerState.Picked)
+@PrinterWorker.state_handler(WorkerState.Picked)
 async def when_picked(worker: PrinterWorker) -> None:
     worker.state = WorkerState.Ready
 
 
-@state_handler(WorkerState.Error)
+@PrinterWorker.state_handler(WorkerState.Error)
 async def when_error(worker) -> None:
     worker.logger.error("Printer is in error state")
     worker.state = WorkerState.Connected

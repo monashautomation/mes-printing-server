@@ -1,7 +1,7 @@
-from worker.core import WorkerEvent, WorkerState, PrinterWorker, event_handler
+from worker.core import WorkerEvent, WorkerState, PrinterWorker
 
 
-@event_handler(WorkerEvent.Cancel)
+@PrinterWorker.event_handler(WorkerEvent.Cancel)
 async def on_cancel(worker: PrinterWorker) -> None:
     match worker.state:
         case WorkerState.Heating | WorkerState.Printing:
@@ -19,7 +19,7 @@ async def on_cancel(worker: PrinterWorker) -> None:
     worker.current_order = None
 
 
-@event_handler(WorkerEvent.Pick)
+@PrinterWorker.event_handler(WorkerEvent.Pick)
 async def on_pick(worker: PrinterWorker) -> None:
     worker.logger.info("Event - Picked")
     worker.state = WorkerState.Ready
