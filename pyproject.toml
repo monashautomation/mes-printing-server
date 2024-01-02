@@ -21,6 +21,7 @@ SQLAlchemy = "^2.0.23"
 asyncua = "^1.0.6"
 asyncpg = "^0.29.0"
 Quart = "^0.19.4"
+python-dotenv = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.12.1"
