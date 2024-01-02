@@ -4,7 +4,7 @@ import pytest
 import pytest_asyncio
 
 from opcuax.mock import MockOpcuaClient
-from opcuax.types import OpcuaObject, OpcuaVariable
+from opcuax.core import OpcuaObject, OpcuaVariable
 
 
 class Printer(OpcuaObject):
@@ -26,9 +26,9 @@ async def opcua_client() -> MockOpcuaClient:
 
 @pytest.fixture
 def opcua_printer1(opcua_client) -> Printer:
-    return opcua_client.get_object(Printer, namespace_idx=1)
+    return opcua_client.get_object(Printer, ns=1)
 
 
 @pytest.fixture
 def opcua_printer2(opcua_client) -> Printer:
-    return opcua_client.get_object(Printer, namespace_idx=2)
+    return opcua_client.get_object(Printer, ns=2)

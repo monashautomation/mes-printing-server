@@ -1,4 +1,4 @@
-from opcuax.types import OpcuaObject, AsyncMutator, OpcuaVariable
+from opcuax.core import OpcuaObject, AsyncMutator, OpcuaVariable
 
 
 class OpcuaPrinter(OpcuaObject):
