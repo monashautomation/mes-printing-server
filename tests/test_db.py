@@ -2,7 +2,6 @@ import pytest
 from sqlalchemy import select
 
 from db.models import User, Order
-from tests.conftest import PrinterHost
 
 
 @pytest.mark.asyncio
@@ -39,9 +38,11 @@ async def test_get_current_order(memory_db_session, admin_printing_order):
 
 
 @pytest.mark.asyncio
-async def test_get_current_order(memory_db_session, admin_printing_order):
+async def test_get_current_order(
+    memory_db_session, admin_printing_order, printer_hosts
+):
     session = await memory_db_session
-    order = await session.get_current_order(PrinterHost.Host1)
+    order = await session.get_current_order(printer_hosts.host1)
     assert order.id == admin_printing_order.id
 
 

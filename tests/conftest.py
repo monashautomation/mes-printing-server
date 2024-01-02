@@ -1,4 +1,5 @@
 import asyncio
+from collections import namedtuple
 from datetime import datetime
 
 import pytest
@@ -9,7 +10,21 @@ from db.models import User, Order
 from octo import MockOctoClient
 from opcuax.mock import MockOpcuaClient
 from opcuax.objects import OpcuaPrinter
-from tests.config import PrinterHost, GcodeFile
+
+PrinterHosts = namedtuple("PrinterHost", ["host1", "host2", "host3"])
+GcodeFiles = namedtuple("GcodeFiles", ["A", "B", "C"])
+
+
+@pytest.fixture
+def printer_hosts() -> PrinterHosts:
+    return PrinterHosts(
+        "192.168.228.1:5000", "192.168.228.2:5000", "192.168.228.3:5000"
+    )
+
+
+@pytest.fixture
+def gcode_files() -> GcodeFiles:
+    return GcodeFiles("A.gcode", "B.gcode", "C.gcode")
 
 
 @pytest.fixture
@@ -33,35 +48,35 @@ def admin_new_order(admin_user) -> Order:
 
 
 @pytest.fixture
-def admin_approved_order(admin_user) -> Order:
+def admin_approved_order(admin_user, gcode_files, printer_hosts) -> Order:
     return Order(
         id=2,
         user_id=admin_user.id,
-        gcode_file_path=GcodeFile.A,
-        printer_ip=PrinterHost.Host1,
+        gcode_file_path=gcode_files.A,
+        printer_ip=printer_hosts.host1,
         approval_time=datetime(2023, 11, 1, 12, 0, 0),
     )
 
 
 @pytest.fixture
-def admin_printing_order(admin_user) -> Order:
+def admin_printing_order(admin_user, gcode_files, printer_hosts) -> Order:
     return Order(
         id=3,
         user_id=admin_user.id,
-        gcode_file_path=GcodeFile.A,
-        printer_ip=PrinterHost.Host1,
+        gcode_file_path=gcode_files.A,
+        printer_ip=printer_hosts.host1,
         approval_time=datetime(2023, 11, 1, 12, 0, 0),
         print_start_time=datetime(2023, 11, 2, 11, 0, 0),
     )
 
 
 @pytest.fixture
-def admin_printed_order(admin_user) -> Order:
+def admin_printed_order(admin_user, gcode_files, printer_hosts) -> Order:
     return Order(
         id=4,
         user_id=admin_user.id,
-        gcode_file_path=GcodeFile.A,
-        printer_ip=PrinterHost.Host1,
+        gcode_file_path=gcode_files.A,
+        printer_ip=printer_hosts.host1,
         approval_time=datetime(2023, 11, 1, 12, 0, 0),
         print_start_time=datetime(2023, 11, 2, 11, 0, 0),
         print_end_time=datetime(2023, 11, 5, 9, 0, 0),
@@ -69,12 +84,12 @@ def admin_printed_order(admin_user) -> Order:
 
 
 @pytest.fixture
-def admin_approved_order2(admin_user) -> Order:
+def admin_approved_order2(admin_user, gcode_files, printer_hosts) -> Order:
     return Order(
         id=5,
         user_id=admin_user.id,
-        gcode_file_path=GcodeFile.A,
-        printer_ip=PrinterHost.Host1,
+        gcode_file_path=gcode_files.A,
+        printer_ip=printer_hosts.host1,
         approval_time=datetime(2023, 11, 2, 12, 0, 0),
     )
 
@@ -148,6 +163,6 @@ def mock_opcua_printer1():
 
 
 @pytest.fixture
-def mock_octo_printer1(request: FixtureRequest) -> MockOctoClient:
-    client = MockOctoClient(host=PrinterHost.Host1)
+def mock_octo_printer1(request: FixtureRequest, printer_hosts) -> MockOctoClient:
+    client = MockOctoClient(url=printer_hosts.host1)
     return client
