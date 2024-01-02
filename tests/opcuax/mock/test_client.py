@@ -1,13 +1,13 @@
 import pytest
 
-from opcuax.types import BaseOpcuaClient
+from opcuax.core import BaseOpcuaClient
 
 
 def test_context_variables_are_set(opcua_printer1):
     printer = opcua_printer1
-    assert printer.__client__ is not None
-    assert isinstance(printer.__client__, BaseOpcuaClient)
-    assert printer.__ns__ == 1
+    assert printer.client() is not None
+    assert isinstance(printer.client(), BaseOpcuaClient)
+    assert printer.namespace() == 1
 
 
 @pytest.mark.asyncio

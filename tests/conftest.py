@@ -144,7 +144,7 @@ async def memory_db_session(
 
 @pytest.fixture
 def mock_opcua_printer1():
-    return MockOpcuaClient(delay=0.01).get_object(OpcuaPrinter, namespace_idx=1)
+    return MockOpcuaClient(delay=0.01).get_object(OpcuaPrinter, ns=1)
 
 
 @pytest.fixture

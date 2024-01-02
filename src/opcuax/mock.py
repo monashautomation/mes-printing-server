@@ -1,7 +1,7 @@
 import asyncio
 
 from opcuax.client import BaseOpcuaClient
-from opcuax.types import OpcuaValue
+from opcuax.core import OpcuaValue
 
 
 class MockOpcuaClient(BaseOpcuaClient):
