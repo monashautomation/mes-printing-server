@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TypeVar, Sequence, Optional
+from typing import TypeVar, Sequence, Optional, Type
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import (
@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 
-from db.models import Base, User, Order
+from db.models import Base, Order
 
 DBModel = TypeVar("DBModel", bound=Base)
 DBSession = TypeVar("DBSession", bound=AsyncSession)
@@ -38,8 +38,8 @@ class DatabaseSession(AsyncSession):
         self.add(instance)
 
     @query
-    async def all_users(self) -> Sequence[User]:
-        result = await self.scalars(select(User))
+    async def all(self, cls: Type[DBModel]) -> Sequence[DBModel]:
+        result = await self.scalars(select(cls))
         return result.all()
 
     @query

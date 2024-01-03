@@ -23,7 +23,7 @@ async def test_create_user(memory_db_session, admin_user):
 
 @pytest.mark.asyncio
 async def test_all_users(memory_db_session, users):
-    users = await memory_db_session.all_users()
+    users = await memory_db_session.all(User)
 
     assert users == users
 
