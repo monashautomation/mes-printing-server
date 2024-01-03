@@ -59,3 +59,15 @@ class Order(Base):
             f"print_end_time={self.print_end_time}, cancelled_time={self.cancelled_time},"
             f"finish_time={self.finish_time})"
         )
+
+
+class Printer(Base):
+    __tablename__ = "printer"
+
+    octo_url: Mapped[str] = mapped_column(
+        unique=True, comment="URL of the octoprint server"
+    )
+    octo_api_key: Mapped[str] = mapped_column(comment="API key of the octoprint server")
+    opcua_ns: Mapped[int] = mapped_column(
+        comment="namespace index of the OPCUA server object"
+    )

@@ -7,6 +7,9 @@ OpcuaObjectNode = TypeVar("OpcuaObjectNode", bound="OpcuaObject")
 
 
 class BaseOpcuaClient(ABC):
+    def __init__(self, url: str):
+        self.url = url
+
     @abstractmethod
     async def connect(self) -> None:
         raise NotImplemented
