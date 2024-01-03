@@ -15,7 +15,7 @@ async def when_connected(worker: PrinterWorker) -> None:
     printer_status = await worker.octo.current_printer_status()
 
     worker.state = parse_printer_state(printer_status.state.flags)
-    worker.current_order = await worker.session.get_current_order(worker.octo.host)
+    worker.current_order = await worker.session.get_current_order(worker.octo.url)
     job_status = await worker.octo.current_job()
 
     match worker.state, worker.current_order:
@@ -92,7 +92,7 @@ async def when_printed(worker: PrinterWorker) -> None:
 
     await worker.opcua_printer_updator.reset_current_job()
 
-    await worker.pickup_notifier(worker.octo.host)  # notify the matrix system to pickup
+    await worker.pickup_notifier(worker.octo.url)  # notify the matrix system to pickup
 
     worker.current_order = None
     worker.state = WorkerState.WaitingForPickup

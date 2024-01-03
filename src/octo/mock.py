@@ -134,11 +134,8 @@ class Heater:
 
 
 class MockOctoClient(BaseOctoClient):
-    def __init__(self, host: str, api_key: str = "mock-api-key", port: int = 5000):
-        super().__init__(host, api_key, port)
-        self.host = host
-        self.api_key = api_key
-        self.port = port
+    def __init__(self, url: str, api_key: str = "mock-api-key"):
+        super().__init__(url, api_key)
 
         self.connected: bool = False
 

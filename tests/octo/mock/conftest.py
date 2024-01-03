@@ -5,22 +5,20 @@ from _pytest.fixtures import FixtureRequest
 
 from octo import MockOctoClient
 from octo.models import OctoPrinterStatus, CurrentPrinterStatus
-from tests.config import GcodeFile
-from tests.conftest import PrinterHost
 
 
 @pytest.fixture
-async def printer1(request: FixtureRequest) -> MockOctoClient:
-    client = MockOctoClient(host=PrinterHost.Host1)
+async def printer1(request: FixtureRequest, printer_hosts) -> MockOctoClient:
+    client = MockOctoClient(url=printer_hosts.host1)
     await client.connect()
     request.addfinalizer(lambda: asyncio.run(client.disconnect()))
     return client
 
 
 @pytest.fixture
-async def printer1_after_upload(printer1) -> MockOctoClient:
+async def printer1_after_upload(printer1, gcode_files) -> MockOctoClient:
     printer = await printer1
-    await printer.upload_file_to_print(GcodeFile.A)
+    await printer.upload_file_to_print(gcode_files.A)
     return printer
 
 

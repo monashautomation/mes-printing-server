@@ -15,14 +15,12 @@ def test_all_states_have_handlers():
 
 @pytest.mark.asyncio
 async def test_initial_state(idle_worker):
-    worker = await idle_worker
-
-    assert worker.state == WorkerState.Connecting
+    assert idle_worker.state == WorkerState.Connecting
 
 
 @pytest.mark.asyncio
 async def test_initial_to_connected(idle_worker):
-    worker = await idle_worker
+    worker = idle_worker
     await worker.work()
 
     assert worker.state == WorkerState.Connected
@@ -30,7 +28,7 @@ async def test_initial_to_connected(idle_worker):
 
 @pytest.mark.asyncio
 async def test_connected_to_ready(idle_worker):
-    worker = await idle_worker
+    worker = idle_worker
     await worker.work()
     await worker.work()
 
@@ -39,7 +37,7 @@ async def test_connected_to_ready(idle_worker):
 
 @pytest.mark.asyncio
 async def test_ready_to_heating(idle_worker, admin_approved_order):
-    worker = await idle_worker
+    worker = idle_worker
 
     for _ in range(3):
         await worker.work()
@@ -51,7 +49,7 @@ async def test_ready_to_heating(idle_worker, admin_approved_order):
 
 @pytest.mark.asyncio
 async def test_during_heating(idle_worker):
-    worker = await idle_worker
+    worker = idle_worker
 
     for _ in range(3):
         await worker.work()
@@ -75,7 +73,7 @@ async def test_during_heating(idle_worker):
 
 @pytest.mark.asyncio
 async def test_printing_to_printed(printing_worker):
-    worker = await printing_worker
+    worker = printing_worker
 
     ticks = worker.octo.job.required_ticks
 
@@ -99,7 +97,7 @@ async def test_printing_to_printed(printing_worker):
 
 @pytest.mark.asyncio
 async def test_printed_to_wait_pickup(printed_worker, admin_approved_order):
-    worker = await printed_worker
+    worker = printed_worker
 
     worker.octo.tick()
     await worker.work()
@@ -120,7 +118,7 @@ async def test_printed_to_wait_pickup(printed_worker, admin_approved_order):
 
 @pytest.mark.asyncio
 async def test_during_waiting_for_pickup(waiting_worker):
-    worker = await waiting_worker
+    worker = waiting_worker
 
     for _ in range(10):
         worker.octo.tick()
@@ -131,7 +129,7 @@ async def test_during_waiting_for_pickup(waiting_worker):
 
 @pytest.mark.asyncio
 async def test_waiting_to_picked(waiting_worker):
-    worker = await waiting_worker
+    worker = waiting_worker
 
     worker.put_event(WorkerEvent.Pick)
     worker.octo.tick()

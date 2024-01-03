@@ -1,11 +1,11 @@
 import asyncio
 
-from opcuax.client import BaseOpcuaClient
-from opcuax.core import OpcuaValue
+from opcuax.core import OpcuaValue, OpcuaClient
 
 
-class MockOpcuaClient(BaseOpcuaClient):
-    def __init__(self, delay: float = 0.1):
+class MockOpcuaClient(OpcuaClient):
+    def __init__(self, delay: float = 0.1, url="mock"):
+        super().__init__(url)
         self.table = {}
         self.delay: float = delay
 

@@ -51,7 +51,7 @@ class PrinterWorker:
         order_fetcher: OrderFetcher = mes.next_printing_order,
         pickup_notifier: PickupNotifier = mes.notify_pickup,
     ):
-        self.logger: Logger = logging.getLogger(f"PrinterWorker - {octo.host}")
+        self.logger: Logger = logging.getLogger(f"PrinterWorker - {octo.url}")
         self.session = session
         self.octo = octo
         self.opcua_printer = opcua_printer
