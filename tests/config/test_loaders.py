@@ -31,33 +31,33 @@ def test_is_mocking(app_config):
     assert not is_mocking("opc.tcp://127.0.0.1:4840")
 
 
-@pytest.mark.asyncio
-async def test_make_mock_opcua_client():
+def test_make_mock_opcua_client():
     url = "mock.opc.tcp://127.0.0.1:4840"
-    client = await make_opcua_client(url)
+    client = make_opcua_client(url)
     assert isinstance(client, MockOpcuaClient)
     assert client.url == url
 
 
-@pytest.mark.asyncio
-async def test_make_opcua_client():
+def test_make_opcua_client():
     url = "opc.tcp://127.0.0.1:4840"
-    client = await make_opcua_client(url)
+    client = make_opcua_client(url)
     assert isinstance(client, OpcuaClient)
     assert client.url == url
 
 
-def test_make_mock_octo_client():
+@pytest.mark.asyncio
+async def test_make_mock_octo_client():
     url, api_key = "mock://localhost:5000", "foobar"
-    client = make_octo_client(url, api_key)
+    client = await make_octo_client(url, api_key)
     assert isinstance(client, MockOctoClient)
     assert client.url == url
     assert client.api_key == api_key
 
 
-def test_make_octo_client():
+@pytest.mark.asyncio
+async def test_make_octo_client():
     url, api_key = "http://localhost:5000", "foobar"
-    client = make_octo_client(url, api_key)
+    client = await make_octo_client(url, api_key)
     assert isinstance(client, OctoRestClient)
     assert client.url == url
     assert client.api_key == api_key
