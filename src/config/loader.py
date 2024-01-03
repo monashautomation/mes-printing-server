@@ -5,8 +5,7 @@ from db import Database
 from db.models import Printer
 from octo import OctoRestClient, MockOctoClient
 from octo.core import BaseOctoClient
-from opcuax.client import OpcuaClient
-from opcuax.core import BaseOpcuaClient
+from opcuax.core import OpcuaClient
 from opcuax.mock import MockOpcuaClient
 from opcuax.objects import OpcuaPrinter
 from worker import PrinterWorker
@@ -26,7 +25,7 @@ def is_mocking(url: str):
     return url.startswith("mock")
 
 
-async def make_opcua_client(url: str) -> BaseOpcuaClient:
+async def make_opcua_client(url: str) -> OpcuaClient:
     if is_mocking(url):
         return MockOpcuaClient(url=url)
     else:
@@ -41,7 +40,7 @@ def make_octo_client(url: str, api_key: str) -> BaseOctoClient:
         return OctoRestClient(url=url, api_key=api_key)
 
 
-def make_printer_worker(printer: Printer, db: Database, opcua_client: BaseOpcuaClient):
+def make_printer_worker(printer: Printer, db: Database, opcua_client: OpcuaClient):
     opcua_printer = opcua_client.get_object(OpcuaPrinter, ns=printer.opcua_ns)
     octo_printer = make_octo_client(printer.octo_url, printer.octo_api_key)
 
