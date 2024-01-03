@@ -1,8 +1,8 @@
-import asyncio
 from collections import namedtuple
 from datetime import datetime
 
 import pytest
+import pytest_asyncio
 from _pytest.fixtures import FixtureRequest
 
 from db.core import Database, DatabaseSession
@@ -13,6 +13,11 @@ from opcuax.objects import OpcuaPrinter
 
 PrinterHosts = namedtuple("PrinterHost", ["host1", "host2", "host3"])
 GcodeFiles = namedtuple("GcodeFiles", ["A", "B", "C"])
+Users = namedtuple("Users", ["admin", "user"])
+
+
+class TestContext:
+    pass
 
 
 @pytest.fixture
@@ -28,18 +33,21 @@ def gcode_files() -> GcodeFiles:
 
 
 @pytest.fixture
-def admin_user() -> User:
-    return User(id=1, name="foo", permission="admin")
+def users() -> Users:
+    return Users(
+        User(id=1, name="foo", permission="admin"),
+        User(id=2, name="bar", permission="user"),
+    )
 
 
 @pytest.fixture
-def normal_user() -> User:
-    return User(id=2, name="bar", permission="user")
+def admin_user(users) -> User:
+    return users.admin
 
 
 @pytest.fixture
-def users(admin_user, normal_user) -> list[User]:
-    return [admin_user, normal_user]
+def normal_user(users) -> User:
+    return users.user
 
 
 @pytest.fixture
@@ -111,17 +119,15 @@ def admin_orders(
     ]
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def memory_db(request: FixtureRequest) -> Database:
     db = Database(url="sqlite+aiosqlite://")
     await db.create_db_and_tables()
-
-    request.addfinalizer(lambda: asyncio.run(db.close()))
-
-    return db
+    yield db
+    await db.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def memory_db_with_no_printing_orders(
     memory_db,
     users,
@@ -129,32 +135,27 @@ async def memory_db_with_no_printing_orders(
     admin_approved_order,
     admin_printed_order,
 ) -> Database:
-    db = await memory_db
-
-    async with db.open_session() as session:
+    async with memory_db.open_session() as session:
         session.add_all(
             [*users, admin_new_order, admin_approved_order, admin_printed_order]
         )
         await session.commit()
+        await session.close()
 
-    return db
+    yield memory_db
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def memory_db_session(
     memory_db, users, admin_orders, request: FixtureRequest
 ) -> DatabaseSession:
-    db = await memory_db
+    session = memory_db.open_session()
 
-    session = db.open_session()
+    async with session, session.begin():
+        session.add_all([*users, *admin_orders])
 
-    async with session as session:
-        async with session.begin():
-            session.add_all([*users, *admin_orders])
-
-    request.addfinalizer(lambda: asyncio.run(session.close()))
-
-    return session
+    yield session
+    await session.close()
 
 
 @pytest.fixture
