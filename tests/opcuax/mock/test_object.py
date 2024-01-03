@@ -57,10 +57,9 @@ async def test_concurrent_set():
         await foo.name.set(name)  # 0.25s
         return await foo.name.get()  # 0.25s
 
-    async with timeout(0.6):
-        async with asyncio.TaskGroup() as group:
-            task1 = group.create_task(update_name(printer1, "printer1"))
-            task2 = group.create_task(update_name(printer2, "printer2"))
+    async with timeout(0.6), asyncio.TaskGroup() as group:
+        task1 = group.create_task(update_name(printer1, "printer1"))
+        task2 = group.create_task(update_name(printer2, "printer2"))
 
     assert task1.result() == "printer1"
     assert task2.result() == "printer2"
