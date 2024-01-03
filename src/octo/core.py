@@ -16,10 +16,9 @@ from octo.models import CurrentPrinterStatus, CurrentJob, TemperatureState
 
 
 class BaseOctoClient:
-    def __init__(self, host: str, api_key: str, port: int = 5000):
-        self.host = host
+    def __init__(self, url: str, api_key: str):
+        self.url = url
         self.api_key = api_key
-        self.port = port
 
     async def connect(self) -> None:
         pass
@@ -50,12 +49,12 @@ OctoprintClient = TypeVar("OctoprintClient", bound="BaseOctoClient")
 
 
 class OctoRestClient(BaseOctoClient):
-    def __init__(self, host: str, api_key: str, port: int = 5000):
-        super().__init__(host, api_key, port)
+    def __init__(self, url: str, api_key: str):
+        super().__init__(url, api_key)
         self.session: ClientSession = ClientSession(
-            base_url=f"http://{host}:{port}", headers={"X-Api-Key": api_key}
+            base_url=url, headers={"X-Api-Key": api_key}
         )
-        self.logger = logging.getLogger(f"OctoClient {host}")
+        self.logger = logging.getLogger(f"OctoClient {url}")
 
     async def close(self):
         await self.session.close()
