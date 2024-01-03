@@ -223,3 +223,6 @@ class MockOctoClient(BaseOctoClient):
 
         if not self.job.is_printing():
             self.state = OctoPrinterStatus.Ready
+
+    async def delete_printed_file(self, file_path: str):
+        pass
