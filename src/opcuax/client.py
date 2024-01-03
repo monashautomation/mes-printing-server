@@ -5,6 +5,7 @@ from opcuax.core import BaseOpcuaClient, OpcuaValue
 
 class OpcuaClient(BaseOpcuaClient):
     def __init__(self, url: str):
+        super().__init__(url)
         self.client = Client(url=url)
 
     def __aenter__(self):
