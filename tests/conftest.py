@@ -16,10 +16,6 @@ GcodeFiles = namedtuple("GcodeFiles", ["A", "B", "C"])
 Users = namedtuple("Users", ["admin", "user"])
 
 
-class TestContext:
-    pass
-
-
 @pytest.fixture
 def printer_hosts() -> PrinterHosts:
     return PrinterHosts(
@@ -165,5 +161,4 @@ def mock_opcua_printer1():
 
 @pytest.fixture
 def mock_octo_printer1(request: FixtureRequest, printer_hosts) -> MockOctoClient:
-    client = MockOctoClient(url=printer_hosts.host1)
-    return client
+    return MockOctoClient(url=printer_hosts.host1)
