@@ -1,32 +1,27 @@
-from abc import ABC, abstractmethod
 from typing import TypeVar, Optional, Type, Generic
+
+from asyncua import Client as AsyncuaClient, ua
 
 OpcuaValue = TypeVar("OpcuaValue", int, str, float, bool)
 _OpcuaClient = TypeVar("_OpcuaClient", bound="BaseOpcuaClient")
 OpcuaObjectNode = TypeVar("OpcuaObjectNode", bound="OpcuaObject")
 
 
-class BaseOpcuaClient(ABC):
+class OpcuaClient(AsyncuaClient):
     def __init__(self, url: str):
+        super().__init__(url)
         self.url = url
 
-    @abstractmethod
-    async def connect(self) -> None:
-        raise NotImplemented
-
-    @abstractmethod
-    async def disconnect(self) -> None:
-        raise NotImplemented
-
-    @abstractmethod
     async def get(
         self, node_id: str, default: Optional[OpcuaValue] = None
     ) -> OpcuaValue:
-        raise NotImplemented
+        node = self.get_node(node_id)
+        return await node.read_value()
 
-    @abstractmethod
     async def set(self, node_id: str, value: OpcuaValue) -> None:
-        raise NotImplemented
+        node = self.get_node(node_id)
+        data_type = await node.read_data_type_as_variant_type()
+        await node.write_value(ua.DataValue(ua.Variant(value, data_type)))
 
     def get_object(self, obj_type: Type[OpcuaObjectNode], ns: int) -> OpcuaObjectNode:
         return obj_type(client=self, ns=ns)
@@ -64,11 +59,11 @@ class AsyncMutator(Generic[OpcuaValue]):
     def __init__(
         self,
         name: str,
-        client: BaseOpcuaClient,
+        client: OpcuaClient,
         ns: int,
         default: Optional[OpcuaValue] = None,
     ):
-        self.client: BaseOpcuaClient = client
+        self.client: OpcuaClient = client
         self.node_id: str = f"ns={ns};s={name}"
         self.default: Optional[OpcuaValue] = default
 

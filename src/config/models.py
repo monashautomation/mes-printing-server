@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel, Field
 
 from db import Database, DatabaseSession
-from opcuax.core import BaseOpcuaClient
+from opcuax.core import OpcuaClient
 from worker import PrinterWorker
 
 
@@ -17,5 +17,5 @@ class AppConfig(BaseModel):
 class AppContext:
     db: Database
     session: DatabaseSession
-    opcua_client: BaseOpcuaClient
+    opcua_client: OpcuaClient
     printer_workers: list[PrinterWorker]

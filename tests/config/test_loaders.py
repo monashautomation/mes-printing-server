@@ -9,7 +9,7 @@ from config.loader import (
     make_octo_client,
 )
 from octo import MockOctoClient, OctoRestClient
-from opcuax.client import OpcuaClient
+from opcuax.core import OpcuaClient
 from opcuax.mock import MockOpcuaClient
 
 
