@@ -172,5 +172,3 @@ class OctoRestClient(BaseOctoClient):
                     raise FileNotFound()
                 case 409:
                     raise FileInUse()
-                case _:
-                    raise UnexpectedError(resp.status)

@@ -147,8 +147,7 @@ class MockOctoClient(BaseOctoClient):
         # printer head
         self.head_xyz = [0, 0, 0]
 
-        self.uploaded_files = []
-        self.deleted_file = None
+        self.uploaded_files = set()
 
     async def connect(self) -> None:
         self.connected = True
@@ -173,7 +172,7 @@ class MockOctoClient(BaseOctoClient):
         self.state = OctoPrinterStatus.Printing
         self.job = PrintingJob(job_file=file_path)
         self.heater.start_heating()
-        self.uploaded_files.append(file_path)
+        self.uploaded_files.add(file_path)
 
     async def current_job(self) -> CurrentJob:
         if self.job is None:
@@ -226,6 +225,4 @@ class MockOctoClient(BaseOctoClient):
             self.state = OctoPrinterStatus.Ready
 
     async def delete_printed_file(self, file_path: str):
-        if file_path in self.uploaded_files:
-            self.uploaded_files.remove(file_path)
-        self.deleted_file = file_path
+        self.uploaded_files.remove(file_path)

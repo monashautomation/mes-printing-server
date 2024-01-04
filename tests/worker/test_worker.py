@@ -100,6 +100,7 @@ async def test_printed_to_wait_pickup(printed_worker, admin_approved_order):
     worker.octo.tick()
     await worker.work()
 
+    assert not worker.octo.uploaded_files
     assert worker.state == WorkerState.WaitingForPickup
 
     job_file = await worker.opcua_printer.job_file.get()
@@ -134,18 +135,3 @@ async def test_waiting_to_picked(waiting_worker):
     await worker.work()
 
     assert worker.state == WorkerState.Ready
-
-
-@pytest.mark.asyncio
-async def test_delete_printed_file(printed_worker):
-    worker = printed_worker
-
-    assert worker.state == WorkerState.Printed
-
-    file_path = worker.octo.job.job_file
-
-    await worker.octo.delete_printed_file(file_path)
-
-    deleted_file = worker.octo.deleted_file
-    assert deleted_file is not None
-    assert deleted_file not in worker.octo.uploaded_files
