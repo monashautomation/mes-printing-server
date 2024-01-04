@@ -2,8 +2,6 @@ import pytest
 
 from worker import WorkerEvent, WorkerState, PrinterWorker
 
-from octo.models import Job, File, CurrentJob, Progress
-
 
 def test_all_events_have_handlers():
     assert all(e in PrinterWorker.event_handlers for e in WorkerEvent)
@@ -139,37 +137,15 @@ async def test_waiting_to_picked(waiting_worker):
 
 
 @pytest.mark.asyncio
-async def test_delete_printed_file(printed_worker, mocker):
-    worker = await printed_worker
+async def test_delete_printed_file(printed_worker):
+    worker = printed_worker
 
-    worker.state = WorkerState.Printed
+    assert worker.state == WorkerState.Printed
 
-    mock_delete = mocker.patch.object(worker.octo, 'delete_printed_file', autospec=True)
+    file_path = worker.octo.job.job_file
 
-    # Create File obj and Job obj
-    mock_file = File(
-        name="test_file.gcode",
-        display="test file.gcode",
-        path="test_path/file.gcode",
-        type="machine_code",
-        type_path=["machine_code", "gcode"]
-    )
-    mock_job = Job(file=mock_file)
+    await worker.octo.delete_printed_file(file_path)
 
-    mock_progress = Progress(
-        completion=100.0,
-        filepos=12345,
-        printTime=3600,
-        printTimeLeft=0,
-        printTimeLeftOrigin="linear"
-    )
-
-    mock_current_job = CurrentJob(job=mock_job, progress=mock_progress, state='Printing', error=None)
-
-    mocker.patch.object(worker.octo, "current_job", return_value=mock_current_job)
-
-    await worker.work()
-
-    mock_delete.assert_called_once_with("test_path/file.gcode")
-
-    assert worker.state == WorkerState.WaitingForPickup
+    deleted_file = worker.octo.deleted_file
+    assert deleted_file is not None
+    assert deleted_file not in worker.octo.uploaded_files

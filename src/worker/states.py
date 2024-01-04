@@ -86,9 +86,8 @@ async def when_printed(worker: PrinterWorker) -> None:
 
     # Retrieve the file path from the current job's file attribute
     job_status = await worker.octo.current_job()
-    if job_status.job and job_status.job.file:
-        file_path = job_status.job.file.path
-        await worker.octo.delete_printed_file(file_path)
+    file_path = job_status.job.file.path
+    await worker.octo.delete_printed_file(file_path)
 
     await worker.opcua_printer_updator.reset_current_job()
 

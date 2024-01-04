@@ -11,6 +11,9 @@ from octo.error import (
     InvalidUploadParam,
     InvalidUploadLocation,
     InvalidFileExtension,
+    FileNotFound,
+    FileInUse,
+    UnexpectedError
 )
 from octo.models import CurrentPrinterStatus, CurrentJob, TemperatureState
 
@@ -162,13 +165,12 @@ class OctoRestClient(BaseOctoClient):
         """
         url = f"/api/files/local/{file_path}"
         async with self.session.delete(url) as resp:
-            self.logger.info(f"delete-printed-file {resp.status}")
             match resp.status:
                 case 204:
-                    self.logger.info("File deleted successfully")
+                    pass
                 case 404:
-                    self.logger.error("File not found")
+                    raise FileNotFound()
                 case 409:
-                    self.logger.error("Conflict: File is currently being printed")
+                    raise FileInUse()
                 case _:
-                    self.logger.error(f"Unexpected error occurred: {resp.status}")
+                    raise UnexpectedError(resp.status)
