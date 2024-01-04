@@ -11,6 +11,9 @@ from octo.error import (
     InvalidUploadParam,
     InvalidUploadLocation,
     InvalidFileExtension,
+    FileNotFound,
+    FileInUse,
+    UnexpectedError
 )
 from octo.models import CurrentPrinterStatus, CurrentJob, TemperatureState
 
@@ -153,3 +156,19 @@ class OctoRestClient(BaseOctoClient):
                     pass
                 case 409:
                     raise CannotPrint()
+
+    async def delete_printed_file(self, file_path: str) -> None:
+        """
+        Deletes a file from the OctoPrint server.
+
+        @param file_path: str The path of the file to delete.
+        """
+        url = f"/api/files/local/{file_path}"
+        async with self.session.delete(url) as resp:
+            match resp.status:
+                case 204:
+                    pass
+                case 404:
+                    raise FileNotFound()
+                case 409:
+                    raise FileInUse()

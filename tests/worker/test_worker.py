@@ -100,6 +100,7 @@ async def test_printed_to_wait_pickup(printed_worker, admin_approved_order):
     worker.octo.tick()
     await worker.work()
 
+    assert not worker.octo.uploaded_files
     assert worker.state == WorkerState.WaitingForPickup
 
     job_file = await worker.opcua_printer.job_file.get()

@@ -83,6 +83,12 @@ async def when_printing(worker: PrinterWorker) -> None:
 async def when_printed(worker: PrinterWorker) -> None:
     await worker.octo.head_jog(x=0, y=0, z=30)
     await worker.session.finish_printing(worker.current_order)
+
+    # Retrieve the file path from the current job's file attribute
+    job_status = await worker.octo.current_job()
+    file_path = job_status.job.file.path
+    await worker.octo.delete_printed_file(file_path)
+
     await worker.opcua_printer_updator.reset_current_job()
 
     await worker.pickup_notifier(worker.octo.url)  # notify the matrix system to pickup

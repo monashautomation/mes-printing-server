@@ -24,3 +24,18 @@ class InvalidUploadLocation(ValueError):
 class InvalidFileExtension(ValueError):
     def __init__(self):
         super().__init__("file must be a gcode or stl")
+
+
+class FileNotFound(ValueError):
+    def __init__(self):
+        super().__init__("File not found")
+
+
+class FileInUse(ValueError):
+    def __init__(self):
+        super().__init__("Conflict: File is currently being printed")
+
+
+class UnexpectedError(Exception):
+    def __init__(self, status):
+        super().__init__(f"Unexpected error occurred: {status}")
