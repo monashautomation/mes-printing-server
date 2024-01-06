@@ -1117,6 +1117,17 @@ files = [
 typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
+name = "pyhumps"
+version = "3.8.0"
+description = "🐫  Convert strings (and dictionary keys) between snake case, camel case and pascal case in Python. Inspired by Humps for Node"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pyhumps-3.8.0-py3-none-any.whl", hash = "sha256:060e1954d9069f428232a1adda165db0b9d8dfdce1d265d36df7fbff540acfd6"},
+    {file = "pyhumps-3.8.0.tar.gz", hash = "sha256:498026258f7ee1a8e447c2e28526c0bea9407f9a59c03260aee4bd6c04d681a3"},
+]
+
+[[package]]
 name = "pyopenssl"
 version = "23.3.0"
 description = "Python wrapper module around the OpenSSL library"
@@ -1236,6 +1247,25 @@ werkzeug = ">=3.0.0"
 [package.extras]
 docs = ["pydata_sphinx_theme"]
 dotenv = ["python-dotenv"]
+
+[[package]]
+name = "quart-schema"
+version = "0.18.0"
+description = "A Quart extension to provide schema validation"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "quart_schema-0.18.0-py3-none-any.whl", hash = "sha256:fff5632a8f683e8cee733b7af51f0a63f45463451bd405d262dd9e0c69ba9704"},
+    {file = "quart_schema-0.18.0.tar.gz", hash = "sha256:d819f62f431ef62adc1b8e72c68f2656aee4b10ac3534154dbe7ca95d3e93dc3"},
+]
+
+[package.dependencies]
+pydantic = ">=2"
+pyhumps = ">=1.6.1"
+quart = ">=0.19.0"
+
+[package.extras]
+docs = ["pydata_sphinx_theme"]
 
 [[package]]
 name = "six"
@@ -1494,4 +1524,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "0fefcfac30c68ca92b11e1638328eb8a1be80ded510acb60db06100d3b28fbf2"
+content-hash = "59899a7cbb803ddb8ef0e7cf0e0207d3a1368077e9711809daf1b1f7f4992954"

@@ -10,7 +10,6 @@ def test_context_variables_are_set(opcua_printer1):
     assert printer.namespace() == 1
 
 
-@pytest.mark.asyncio
 async def test_get_default_value(opcua_client, printer1_name_node):
     node_id, _ = printer1_name_node
     default_value = "unknown"
@@ -21,7 +20,6 @@ async def test_get_default_value(opcua_client, printer1_name_node):
     assert opcua_client.table[node_id] == default_value
 
 
-@pytest.mark.asyncio
 async def test_get(opcua_client, printer1_name_node):
     node_id, name = printer1_name_node
 
@@ -31,7 +29,6 @@ async def test_get(opcua_client, printer1_name_node):
     assert actual == name
 
 
-@pytest.mark.asyncio
 async def test_set(opcua_client, printer1_name_node):
     node_id, name = printer1_name_node
 

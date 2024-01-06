@@ -1,45 +1,46 @@
 import asyncio
 
 import pytest
+import pytest_asyncio
 from _pytest.fixtures import FixtureRequest
 
 from octo import MockOctoClient
 from octo.models import OctoPrinterStatus, CurrentPrinterStatus
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def printer1(request: FixtureRequest, printer_hosts) -> MockOctoClient:
     client = MockOctoClient(url=printer_hosts.host1)
     await client.connect()
-    request.addfinalizer(lambda: asyncio.run(client.disconnect()))
-    return client
+    yield client
+    await client.disconnect()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def printer1_after_upload(printer1, gcode_files) -> MockOctoClient:
-    printer = await printer1
+    printer = printer1
     await printer.upload_file_to_print(gcode_files.A)
-    return printer
+    yield printer
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def printer1_after_heating(printer1_after_upload) -> MockOctoClient:
-    printer = await printer1_after_upload
+    printer = printer1_after_upload
 
     for _ in range(printer.heater.required_ticks):
         printer.tick()
 
-    return printer
+    yield printer
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def printer1_after_printing(printer1_after_heating) -> MockOctoClient:
-    printer = await printer1_after_heating
+    printer = printer1_after_heating
 
     for _ in range(printer.job.required_ticks):
         printer.tick()
 
-    return printer
+    yield printer
 
 
 def assert_printer_is_ready(printer_status: CurrentPrinterStatus):

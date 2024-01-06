@@ -11,12 +11,10 @@ def test_all_states_have_handlers():
     assert all(e in PrinterWorker.state_handlers for e in WorkerState)
 
 
-@pytest.mark.asyncio
 async def test_initial_state(idle_worker):
     assert idle_worker.state == WorkerState.Connecting
 
 
-@pytest.mark.asyncio
 async def test_initial_to_connected(idle_worker):
     worker = idle_worker
     await worker.work()
@@ -24,7 +22,6 @@ async def test_initial_to_connected(idle_worker):
     assert worker.state == WorkerState.Connected
 
 
-@pytest.mark.asyncio
 async def test_connected_to_ready(idle_worker):
     worker = idle_worker
     await worker.work()
@@ -33,7 +30,6 @@ async def test_connected_to_ready(idle_worker):
     assert worker.state == WorkerState.Ready
 
 
-@pytest.mark.asyncio
 async def test_ready_to_heating(idle_worker, admin_approved_order):
     worker = idle_worker
 
@@ -45,7 +41,6 @@ async def test_ready_to_heating(idle_worker, admin_approved_order):
     assert worker.current_order.print_start_time is not None
 
 
-@pytest.mark.asyncio
 async def test_during_heating(idle_worker):
     worker = idle_worker
 
@@ -69,7 +64,6 @@ async def test_during_heating(idle_worker):
     assert worker.state == WorkerState.Printing
 
 
-@pytest.mark.asyncio
 async def test_printing_to_printed(printing_worker):
     worker = printing_worker
 
@@ -93,7 +87,6 @@ async def test_printing_to_printed(printing_worker):
     assert worker.state == WorkerState.Printed
 
 
-@pytest.mark.asyncio
 async def test_printed_to_wait_pickup(printed_worker, admin_approved_order):
     worker = printed_worker
 
@@ -115,7 +108,6 @@ async def test_printed_to_wait_pickup(printed_worker, admin_approved_order):
     assert worker.octo.head_xyz != [0, 0, 0]
 
 
-@pytest.mark.asyncio
 async def test_during_waiting_for_pickup(waiting_worker):
     worker = waiting_worker
 
@@ -126,7 +118,6 @@ async def test_during_waiting_for_pickup(waiting_worker):
         assert worker.state == WorkerState.WaitingForPickup
 
 
-@pytest.mark.asyncio
 async def test_waiting_to_picked(waiting_worker):
     worker = waiting_worker
 

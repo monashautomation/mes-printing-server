@@ -1,13 +1,11 @@
 import asyncio
 
-import pytest
 from async_timeout import timeout
 
 from opcuax.mock import MockOpcuaClient
 from tests.opcuax.mock.conftest import Printer
 
 
-@pytest.mark.asyncio
 async def test_get_default(opcua_printer1, printer1_name_node):
     node_id, _ = printer1_name_node
     value = await opcua_printer1.name.get()
@@ -17,7 +15,6 @@ async def test_get_default(opcua_printer1, printer1_name_node):
     assert client_value == Printer.name.default
 
 
-@pytest.mark.asyncio
 async def test_get(opcua_printer1, printer1_name_node):
     node_id, name = printer1_name_node
     await opcua_printer1.client().set(node_id, name)
@@ -26,7 +23,6 @@ async def test_get(opcua_printer1, printer1_name_node):
     assert actual == name
 
 
-@pytest.mark.asyncio
 async def test_set(opcua_printer1, printer1_name_node):
     node_id, name = printer1_name_node
     await opcua_printer1.name.set(name)
@@ -35,7 +31,6 @@ async def test_set(opcua_printer1, printer1_name_node):
     assert actual == name
 
 
-@pytest.mark.asyncio
 async def test_mutation(opcua_printer1, opcua_printer2):
     await opcua_printer1.name.set("foo")
     await opcua_printer2.name.set("bar")
@@ -47,7 +42,6 @@ async def test_mutation(opcua_printer1, opcua_printer2):
     assert name2 == "bar"
 
 
-@pytest.mark.asyncio
 async def test_concurrent_set():
     client = MockOpcuaClient(delay=0.25)
     printer1 = client.get_object(Printer, ns=1)

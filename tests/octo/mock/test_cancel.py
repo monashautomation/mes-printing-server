@@ -1,14 +1,11 @@
-import pytest
-
 from tests.octo.mock.conftest import (
     assert_printer_is_cancelling,
     assert_printer_is_ready,
 )
 
 
-@pytest.mark.asyncio
 async def test_cancel_during_heating(printer1_after_upload):
-    printer = await printer1_after_upload
+    printer = printer1_after_upload
 
     for _ in range(printer.heater.required_ticks - 1):
         printer.tick()
@@ -27,9 +24,8 @@ async def test_cancel_during_heating(printer1_after_upload):
     assert job_status.progress.completion == 0
 
 
-@pytest.mark.asyncio
 async def test_cancel_during_printing(printer1_after_heating):
-    printer = await printer1_after_heating
+    printer = printer1_after_heating
 
     for _ in range(printer.job.required_ticks - 1):
         printer.tick()

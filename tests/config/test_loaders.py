@@ -19,7 +19,6 @@ def test_load_env(prepare_env_file, env_filepath, app_config):
     assert config == app_config
 
 
-@pytest.mark.asyncio
 async def test_load_db(app_config):
     db = await load_db(app_config.db_url)
     assert db is not None
@@ -45,7 +44,6 @@ def test_make_opcua_client():
     assert client.url == url
 
 
-@pytest.mark.asyncio
 async def test_make_mock_octo_client():
     url, api_key = "mock://localhost:5000", "foobar"
     client = await make_octo_client(url, api_key)
@@ -54,7 +52,6 @@ async def test_make_mock_octo_client():
     assert client.api_key == api_key
 
 
-@pytest.mark.asyncio
 async def test_make_octo_client():
     url, api_key = "http://localhost:5000", "foobar"
     client = await make_octo_client(url, api_key)
@@ -63,7 +60,6 @@ async def test_make_octo_client():
     assert client.api_key == api_key
 
 
-@pytest.mark.asyncio
 async def test_load_app_context(
     prepare_env_file, env_filepath, app_config, mock_printer
 ):
