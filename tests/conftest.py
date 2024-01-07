@@ -12,16 +12,8 @@ from octo import MockOctoClient
 from opcuax.mock import MockOpcuaClient
 from opcuax.objects import OpcuaPrinter
 
-PrinterHosts = namedtuple("PrinterHost", ["host1", "host2", "host3"])
 GcodeFiles = namedtuple("GcodeFiles", ["A", "B", "C"])
 Users = namedtuple("Users", ["admin", "user"])
-
-
-@pytest.fixture
-def printer_hosts() -> PrinterHosts:
-    return PrinterHosts(
-        "192.168.228.1:5000", "192.168.228.2:5000", "192.168.228.3:5000"
-    )
 
 
 @pytest.fixture
