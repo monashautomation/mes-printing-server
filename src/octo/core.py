@@ -13,7 +13,7 @@ from octo.error import (
     InvalidFileExtension,
     FileNotFound,
     FileInUse,
-    UnexpectedError
+    UnexpectedError,
 )
 from octo.models import CurrentPrinterStatus, CurrentJob, TemperatureState
 

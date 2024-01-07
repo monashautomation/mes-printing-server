@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from db import Database, DatabaseSession
 from opcuax.core import OpcuaClient
 from worker import PrinterWorker
+from pathlib import Path
 
 
 class AppConfig(BaseModel):
@@ -19,3 +20,4 @@ class AppContext:
     session: DatabaseSession
     opcua_client: OpcuaClient
     printer_workers: list[PrinterWorker]
+    upload_path: Path

@@ -15,7 +15,7 @@ async def when_connected(worker: PrinterWorker) -> None:
     printer_status = await worker.octo.current_printer_status()
 
     worker.state = parse_printer_state(printer_status.state.flags)
-    worker.current_order = await worker.session.get_current_order(worker.octo.url)
+    worker.current_order = await worker.session.current_order(worker.printer_id)
     job_status = await worker.octo.current_job()
 
     match worker.state, worker.current_order:

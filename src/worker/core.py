@@ -48,6 +48,7 @@ class PrinterWorker:
         session: DatabaseSession,
         octo: OctoprintClient,
         opcua_printer: OpcuaPrinter,
+        printer_id: int,
         order_fetcher: OrderFetcher = mes.next_printing_order,
         pickup_notifier: PickupNotifier = mes.notify_pickup,
     ):
@@ -58,6 +59,7 @@ class PrinterWorker:
         self.opcua_printer_updator = OpcuaPrinterUpdator(opcua_printer)
         self.state: WorkerState = WorkerState.Connecting
         self.current_order: Order | None = None
+        self.printer_id: int = printer_id
 
         self._event_queue: asyncio.Queue = asyncio.Queue()
 

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from dotenv import dotenv_values
 
 from config.models import AppConfig, AppContext
@@ -47,7 +49,10 @@ async def make_printer_worker(
     octo_printer = await make_octo_client(printer.octo_url, printer.octo_api_key)
 
     return PrinterWorker(
-        session=db.open_session(), opcua_printer=opcua_printer, octo=octo_printer
+        session=db.open_session(),
+        opcua_printer=opcua_printer,
+        octo=octo_printer,
+        printer_id=printer.id,
     )
 
 
@@ -61,5 +66,9 @@ async def load_app_context(env_filepath: str = ".env") -> AppContext:
     workers = [await make_printer_worker(p, db, opcua_client) for p in printers]
 
     return AppContext(
-        db=db, session=session, opcua_client=opcua_client, printer_workers=workers
+        db=db,
+        session=session,
+        opcua_client=opcua_client,
+        printer_workers=workers,
+        upload_path=Path(config.upload_path),
     )
