@@ -1,56 +1,62 @@
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
 
 from config.models import AppConfig
+from db import Database
 from db.models import Printer
 
 
-def path_from_project_root(filename) -> Path:
-    return Path() / "tests" / "config" / filename
-
-
-def path_from_current_folder(filename) -> Path:
-    return Path() / filename
-
-
-def path_of(filename) -> str:
-    path = path_from_project_root(filename)
-
-    if not path.exists():
-        path = path_from_current_folder(filename)
-
-    return str(path)
+@pytest.fixture
+def folder(tmp_path) -> Path:
+    return Path(tmp_path)
 
 
 @pytest.fixture
-def env_filepath() -> str:
-    return path_of(".env.unittest")
+def env_path(folder) -> str:
+    path = folder / ".env"
+    return str(path.absolute())
 
 
 @pytest.fixture
-def sqlite_filepath() -> str:
-    return path_of("app.db")
+def db_path(folder) -> str:
+    path = folder / "app.db"
+    return str(path.absolute())
 
 
 @pytest.fixture
-def app_config(sqlite_filepath) -> AppConfig:
+def app_config(db_path) -> AppConfig:
     return AppConfig(
-        DATABASE_URL=f"sqlite+aiosqlite:///{sqlite_filepath}",
+        DATABASE_URL=f"sqlite+aiosqlite:///{db_path}",
         OPCUA_SERVER_URL="mock.opc.tcp://127.0.0.1:4840",
         UPLOAD_PATH="./gcode-files",
     )
 
 
-@pytest.fixture
-def prepare_env_file(app_config, env_filepath):
+@pytest.fixture(autouse=True)
+def prepare_env_file(app_config, env_path, tmp_path):
     lines = [
         f"DATABASE_URL='{app_config.db_url}'\n"
         f"OPCUA_SERVER_URL='{app_config.opcua_server_url}'\n"
         f"UPLOAD_PATH='{app_config.upload_path}'\n"
     ]
-    with open(env_filepath, "w") as f:
+    with open(env_path, "w") as f:
         f.writelines(lines)
+
+
+@pytest_asyncio.fixture
+async def database(printer1, app_config):
+    db = Database(app_config.db_url)
+    await db.create_db_and_tables()
+
+    session = db.open_session()
+    await session.upsert(printer1)
+
+    yield db
+
+    await session.close()
+    await db.close()
 
 
 @pytest.fixture

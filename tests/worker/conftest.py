@@ -7,6 +7,7 @@ from worker import PrinterWorker
 @pytest_asyncio.fixture
 async def idle_worker(
     memory_db_with_no_printing_orders,
+    printer1,
     mock_octo_printer1,
     mock_opcua_printer1,
     request: FixtureRequest,
@@ -21,6 +22,7 @@ async def idle_worker(
         session=session,
         octo=mock_octo_printer1,
         opcua_printer=mock_opcua_printer1,
+        printer_id=printer1.id,
         order_fetcher=session.next_order_fifo,
         pickup_notifier=notify_pickup,
     )

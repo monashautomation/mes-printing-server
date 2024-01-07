@@ -1,5 +1,6 @@
 import pytest
 
+from db.models import Order
 from worker import WorkerEvent, WorkerState, PrinterWorker
 
 
@@ -98,7 +99,7 @@ async def test_printed_to_wait_pickup(printed_worker, admin_approved_order):
 
     job_file = await worker.opcua_printer.job_file.get()
     job_progress = await worker.opcua_printer.job_progress.get()
-    order = await worker.session.get_order_by_id(admin_approved_order.id)
+    order = await worker.session.get(Order, admin_approved_order.id)
 
     assert job_file == ""
     assert job_progress == 0

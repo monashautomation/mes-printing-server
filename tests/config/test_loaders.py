@@ -1,5 +1,3 @@
-import pytest
-
 from config import load_app_context
 from config.loader import (
     load_db,
@@ -8,21 +6,25 @@ from config.loader import (
     is_mocking,
     make_octo_client,
 )
+from db.models import Printer
 from octo import MockOctoClient, OctoRestClient
 from opcuax.core import OpcuaClient
 from opcuax.mock import MockOpcuaClient
 
 
-def test_load_env(prepare_env_file, env_filepath, app_config):
-    config = load_env(env_filepath)
+def test_load_env(prepare_env_file, env_path, app_config):
+    config = load_env(env_path)
 
     assert config == app_config
 
 
-async def test_load_db(app_config):
+async def test_load_db(app_config, database):
     db = await load_db(app_config.db_url)
-    assert db is not None
     assert str(db.engine.url) == app_config.db_url
+
+    async with db.open_session() as session:
+        printers = await session.all(Printer)
+        assert printers != []
 
 
 def test_is_mocking(app_config):
@@ -60,10 +62,8 @@ async def test_make_octo_client():
     assert client.api_key == api_key
 
 
-async def test_load_app_context(
-    prepare_env_file, env_filepath, app_config, mock_printer
-):
-    ctx = await load_app_context(env_filepath)
+async def test_load_app_context(database, env_path, app_config, printer1):
+    ctx = await load_app_context(env_path)
 
     assert str(ctx.db.engine.url) == app_config.db_url
     assert ctx.opcua_client.url == app_config.opcua_server_url
@@ -71,7 +71,10 @@ async def test_load_app_context(
 
     worker = ctx.printer_workers[0]
 
-    assert worker.octo.url == mock_printer.octo_url
-    assert worker.octo.api_key == mock_printer.octo_api_key
+    assert worker.octo.url == printer1.octo_url
+    assert worker.octo.api_key == printer1.octo_api_key
     assert worker.opcua_printer.client().url == app_config.opcua_server_url
-    assert worker.opcua_printer.namespace() == mock_printer.opcua_ns
+    assert worker.opcua_printer.namespace() == printer1.opcua_ns
+
+    await ctx.session.close()
+    await ctx.db.close()
