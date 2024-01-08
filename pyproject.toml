@@ -20,9 +20,11 @@ aiohttp = "^3.9.1"
 SQLAlchemy = "^2.0.23"
 asyncua = "^1.0.6"
 asyncpg = "^0.29.0"
-Quart = "^0.19.4"
 python-dotenv = "^1.0.0"
 sqlmodel = "^0.0.14"
+fastapi = "^0.108.0"
+uvicorn = "^0.25.0"
+python-multipart = "^0.0.6"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.12.1"
@@ -34,7 +36,7 @@ async-timeout = "*"
 asyncio_mode = "auto"
 
 [tool.poetry.scripts]
-start = "api:run"
+#start = "api:run"
 
 [build-system]
 requires = ["poetry-core"]
