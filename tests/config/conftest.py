@@ -1,9 +1,10 @@
+import os
 from pathlib import Path
 
 import pytest
 import pytest_asyncio
 
-from config.models import AppConfig
+from config.env import AppConfig, EnvVar
 from db import Database
 from db.models import Printer
 
@@ -34,7 +35,7 @@ def app_config(db_path) -> AppConfig:
     )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def prepare_env_file(app_config, env_path, tmp_path):
     lines = [
         f"DATABASE_URL='{app_config.db_url}'\n"
@@ -43,6 +44,9 @@ def prepare_env_file(app_config, env_path, tmp_path):
     ]
     with open(env_path, "w") as f:
         f.writelines(lines)
+    os.environ[EnvVar.env_file] = env_path
+    yield
+    del os.environ[EnvVar.env_file]
 
 
 @pytest_asyncio.fixture

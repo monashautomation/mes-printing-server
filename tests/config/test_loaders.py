@@ -1,7 +1,6 @@
 from config import load_app_context
 from config.loader import (
     load_db,
-    load_env,
     make_opcua_client,
     is_mocking,
     make_octo_client,
@@ -10,12 +9,6 @@ from db.models import Printer
 from octo import MockOctoClient, OctoRestClient
 from opcuax.core import OpcuaClient
 from opcuax.mock import MockOpcuaClient
-
-
-def test_load_env(prepare_env_file, env_path, app_config):
-    config = load_env(env_path)
-
-    assert config == app_config
 
 
 async def test_load_db(app_config, database):
@@ -62,8 +55,8 @@ async def test_make_octo_client():
     assert client.api_key == api_key
 
 
-async def test_load_app_context(database, env_path, app_config, printer1):
-    ctx = await load_app_context(env_path)
+async def test_load_app_context(prepare_env_file, database, app_config, printer1):
+    ctx = await load_app_context()
 
     assert str(ctx.db.engine.url) == app_config.db_url
     assert ctx.opcua_client.url == app_config.opcua_server_url

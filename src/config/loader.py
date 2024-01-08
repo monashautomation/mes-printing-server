@@ -1,8 +1,7 @@
 from pathlib import Path
 
-from dotenv import dotenv_values
-
-from config.models import AppConfig, AppContext
+from config.env import load_env
+from config.models import AppContext
 from db import Database
 from db.models import Printer
 from octo import OctoRestClient, MockOctoClient
@@ -11,10 +10,6 @@ from opcuax.core import OpcuaClient
 from opcuax.mock import MockOpcuaClient
 from opcuax.objects import OpcuaPrinter
 from worker import PrinterWorker
-
-
-def load_env(env_filepath: str = ".env") -> AppConfig:
-    return AppConfig(**dotenv_values(env_filepath))
 
 
 async def load_db(url: str) -> Database:
@@ -56,8 +51,8 @@ async def make_printer_worker(
     )
 
 
-async def load_app_context(env_filepath: str = ".env") -> AppContext:
-    config = load_env(env_filepath)
+async def load_app_context() -> AppContext:
+    config = load_env()
 
     db = await load_db(config.db_url)
     session = db.open_session()
