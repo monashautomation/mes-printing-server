@@ -9,7 +9,9 @@ class Base(SQLModel):
     create_time: datetime = Field(default=datetime.now())
 
     def __eq__(self, other: Any):
-        return isinstance(other, self.__class__) and self.id == other.id
+        if not isinstance(other, type(self)) or self.id is None:
+            return False
+        return self.id == other.id
 
 
 class User(Base, table=True):
