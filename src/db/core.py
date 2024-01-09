@@ -22,6 +22,10 @@ class DatabaseSession(AsyncSession):
         await self.commit()
         await self.refresh(instance)
 
+    async def exists(self, cls: Type[DBModel], pk: int) -> bool:
+        result = await self.get(cls, pk)
+        return result is not None
+
     async def all(self, cls: Type[DBModel]) -> Sequence[DBModel]:
         result = await self.exec(select(cls))
         return result.all()
