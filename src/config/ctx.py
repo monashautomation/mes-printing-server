@@ -1,4 +1,3 @@
-import asyncio
 from pathlib import Path
 
 from config.env import load_env
@@ -27,10 +26,11 @@ class AppContext:
             await make_printer_worker(p, self.db, self.opcua_client) for p in printers
         ]
 
-    async def start_workers(self):
-        async with asyncio.TaskGroup() as group:
-            for worker in self.printer_workers:
-                group.create_task(worker.run())
+    def get_worker(self, printer_id: int) -> PrinterWorker | None:
+        for worker in self.printer_workers:
+            if worker.printer_id == printer_id:
+                return worker
+        return None
 
     async def close(self):
         await self.session.close()
