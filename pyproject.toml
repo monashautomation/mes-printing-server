@@ -10,7 +10,7 @@ packages = [
     { include = "octo", from = "src" },
     { include = "db", from = "src" },
     { include = "worker", from = "src" },
-    { include = "api", from = "src" },
+    { include = "app", from = "src" },
 ]
 
 [tool.poetry.dependencies]
