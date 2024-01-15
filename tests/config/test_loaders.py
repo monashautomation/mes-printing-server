@@ -1,4 +1,4 @@
-from config import load_app_context
+from config import AppContext
 from config.loader import (
     load_db,
     make_opcua_client,
@@ -56,7 +56,9 @@ async def test_make_octo_client():
 
 
 async def test_load_app_context(prepare_env_file, database, app_config, printer1):
-    ctx = await load_app_context()
+    ctx = AppContext()
+
+    await ctx.load()
 
     assert str(ctx.db.engine.url) == app_config.db_url
     assert ctx.opcua_client.url == app_config.opcua_server_url

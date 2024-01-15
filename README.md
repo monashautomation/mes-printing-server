@@ -62,12 +62,11 @@ as the database URL, the program will use an in-memory SQLite.
 
 ## Run
 
-TODO
-
 Run the printer server:
 
 ```shell
-poetry run start
+export ENV_FILE='.env.local'
+uvicorn app.main:app
 ```
 
 ## Test

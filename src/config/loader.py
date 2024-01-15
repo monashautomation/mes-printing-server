@@ -1,7 +1,3 @@
-from pathlib import Path
-
-from config.env import load_env
-from config.models import AppContext
 from db import Database
 from db.models import Printer
 from octo import OctoRestClient, MockOctoClient
@@ -48,22 +44,4 @@ async def make_printer_worker(
         opcua_printer=opcua_printer,
         octo=octo_printer,
         printer_id=printer.id,
-    )
-
-
-async def load_app_context() -> AppContext:
-    config = load_env()
-
-    db = await load_db(config.db_url)
-    session = db.open_session()
-    printers = await session.all(Printer)
-    opcua_client = make_opcua_client(url=config.opcua_server_url)
-    workers = [await make_printer_worker(p, db, opcua_client) for p in printers]
-
-    return AppContext(
-        db=db,
-        session=session,
-        opcua_client=opcua_client,
-        printer_workers=workers,
-        upload_path=Path(config.upload_path),
     )
