@@ -92,6 +92,6 @@ class AppContext:
         await self.database.close()
 
         for worker in self.workers.values():
-            await worker.stop()
+            worker.stop()
 
         self.workers.clear()
