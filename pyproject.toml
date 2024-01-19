@@ -6,9 +6,9 @@ authors = ["Jicheng Zhi <jzhi0004@student.monash.edu>"]
 license = "MIT"
 readme = "README.md"
 packages = [
-    { include = "opcuax", from = "src" },
-    { include = "octo", from = "src" },
     { include = "db", from = "src" },
+    { include = "opcuax", from = "src" },
+    { include = "printer", from = "src" },
     { include = "worker", from = "src" },
     { include = "app", from = "src" },
 ]
