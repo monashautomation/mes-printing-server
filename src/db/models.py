@@ -1,11 +1,15 @@
 from datetime import datetime
-from typing import Optional, Any
+from enum import StrEnum
+from pathlib import Path
+from typing import Any
 
 from sqlmodel import SQLModel, Field, Relationship
 
+from printer import PrinterApi
+
 
 class Base(SQLModel):
-    id: Optional[int] = Field(primary_key=True, default=None)
+    id: int | None = Field(primary_key=True, default=None)
     create_time: datetime = Field(default=datetime.now())
 
     def __eq__(self, other: Any):
@@ -15,26 +19,36 @@ class Base(SQLModel):
 
 
 class User(Base, table=True):
+    id: str | None = Field(primary_key=True, default=None)
     name: str = Field(unique=True, index=True)
     permission: str = Field(description="admin/user")
 
 
 class Printer(Base, table=True):
-    octo_url: str = Field(unique=True, description="URL of the octoprint server")
-    octo_api_key: str = Field(description="API key of the octoprint server")
+    url: str = Field(unique=True, description="Http URL of the printer")
+    api_key: str | None = Field(description="API key of the printer")
+    api: PrinterApi = Field(description="API standard")
     opcua_ns: int = Field(description="namespace index of the OPCUA server object")
 
 
+class JobStatus(StrEnum):
+    Pending = "pending"
+    Printing = "printing"
+    Printed = "printed"
+    Storage = "storage"
+    Finished = "finished"
+
+
 class Order(Base, table=True):
-    user_id: int = Field(foreign_key="user.id")
-    printer_id: Optional[int] = Field(foreign_key="printer.id", default=None)
+    user_id: str = Field(foreign_key="user.id")
+    printer_id: int | None = Field(foreign_key="printer.id", default=None)
     gcode_file_path: str
+    job_status: JobStatus = Field(default=JobStatus.Pending)
+    cancelled: bool = Field(default=False)
+    approved: bool = Field(default=False)
 
-    approval_time: Optional[datetime] = Field(default=None)
-    print_start_time: Optional[datetime] = Field(default=None)
-    print_end_time: Optional[datetime] = Field(default=None)
-    cancelled_time: Optional[datetime] = Field(default=None)
-    finish_time: Optional[datetime] = Field(default=None)
+    user: User | None = Relationship()
+    printer: Printer | None = Relationship()
 
-    user: User = Relationship()
-    printer: Optional[Printer] = Relationship()
+    def gcode_filename(self) -> str:
+        return Path(self.gcode_file_path).name
