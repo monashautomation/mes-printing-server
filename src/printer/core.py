@@ -4,6 +4,7 @@ from typing import TypeVar, Any
 
 from aiohttp import ClientSession
 from pydantic import HttpUrl
+from urllib.parse import urljoin
 
 from printer.models import PrinterStatus, LatestJob
 
@@ -75,7 +76,10 @@ class BaseHttpPrinter(BaseActualPrinter, ABC):
         self.session = session
 
     def _request_params(self, endpoint: str) -> dict[str, Any]:
-        return {"url": self.url + endpoint, "headers": {"X-Api-Key": self.api_key}}
+        return {
+            "url": urljoin(self.url, endpoint),
+            "headers": {"X-Api-Key": self.api_key},
+        }
 
     def get(self, endpoint: str, **kwargs):
         return self.session.get(**self._request_params(endpoint), **kwargs)
