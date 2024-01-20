@@ -107,6 +107,41 @@ The API docs are available at `http://localhost:8000/docs`
 poetry run pytest tests/
 ```
 
+## ERD
+
+```mermaid
+---
+title: Printer Server ERD
+---
+erDiagram
+    User ||--o{ Order: has
+    Order o|--|| Printer: "is printed by"
+    User{
+        string id PK "will move to Auth0"
+        string name
+        string permission "admin/user"
+        datetime create_time
+    }
+    Printer {
+        int id PK
+        int url
+        string api_key
+        string api "OctoPrint/Prusa/mock"
+        int opcua_ns
+        datetime create_time
+    }
+    Order{
+        int id PK
+        string user_id FK
+        int printer_id FK
+        string gcode_file_path
+        string job_status
+        bool cancelled
+        bool approved
+        datetime create_time
+    }
+```
+
 ## Contribute
 
 TODO: pre-commit hook
