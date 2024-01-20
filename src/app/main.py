@@ -1,11 +1,10 @@
-import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-
-from app.dependencies import app_ctx
-from app.routers import printers, orders
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.dependencies import ctx
+from app.routers import printers, orders
 
 origins = [
     "http://localhost",
@@ -15,15 +14,9 @@ origins = [
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await app_ctx.load()
-    worker_tasks = [
-        asyncio.create_task(worker.run(), name=f"printer-worker-{worker.printer_id}")
-        for worker in app_ctx.printer_workers
-    ]
-    yield
-    for task in worker_tasks:
-        task.cancel()
-    await app_ctx.close()
+    async with ctx:
+        await ctx.start_printer_workers()
+        yield
 
 
 app = FastAPI(lifespan=lifespan)

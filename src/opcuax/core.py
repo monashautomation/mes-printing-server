@@ -3,7 +3,7 @@ from typing import TypeVar, Optional, Type, Generic
 from asyncua import Client as AsyncuaClient, ua
 
 OpcuaValue = TypeVar("OpcuaValue", int, str, float, bool)
-_OpcuaClient = TypeVar("_OpcuaClient", bound="BaseOpcuaClient")
+_OpcuaClient = TypeVar("_OpcuaClient", bound="OpcuaClient")
 OpcuaObjectNode = TypeVar("OpcuaObjectNode", bound="OpcuaObject")
 
 

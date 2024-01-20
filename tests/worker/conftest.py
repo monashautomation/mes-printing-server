@@ -1,66 +1,23 @@
 import pytest_asyncio
-from _pytest.fixtures import FixtureRequest
 
+from ctx import AppContext
+from db.models import Printer, User
 from worker import PrinterWorker
 
 
 @pytest_asyncio.fixture
-async def idle_worker(
-    memory_db_with_no_printing_orders,
-    printer1,
-    mock_octo_printer1,
-    mock_opcua_printer1,
-    request: FixtureRequest,
-) -> PrinterWorker:
-    db = memory_db_with_no_printing_orders
-    session = db.open_session()
-
-    async def notify_pickup(printer_host: str):
-        pass
-
-    worker = PrinterWorker(
-        session=session,
-        octo=mock_octo_printer1,
-        opcua_printer=mock_opcua_printer1,
-        printer_id=printer1.id,
-        order_fetcher=session.next_order_fifo,
-        pickup_notifier=notify_pickup,
-    )
-
-    yield worker
-    await worker.session.close()
+async def context(
+    context: AppContext, printer1: Printer, admin: User, admin_approved_order
+):
+    async with context.database.new_session() as session:
+        session.add_all([admin, printer1, admin_approved_order])
+        await session.commit()
+    context.printer_worker(printer1)
+    yield context
 
 
 @pytest_asyncio.fixture
-async def printing_worker(idle_worker):
-    worker = idle_worker
-
-    for _ in range(3):
-        await worker.work()
-
-    for i in range(worker.octo.heater.required_ticks):
-        worker.octo.tick()
-        await worker.work()
-
-    yield worker
-
-
-@pytest_asyncio.fixture
-async def printed_worker(printing_worker):
-    worker = printing_worker
-
-    for i in range(worker.octo.job.required_ticks):
-        worker.octo.tick()
-        await worker.work()
-
-    yield worker
-
-
-@pytest_asyncio.fixture
-async def waiting_worker(printed_worker):
-    worker = printed_worker
-
-    worker.octo.tick()
-    await worker.work()
-
-    yield worker
+async def worker1(context: AppContext, printer1: Printer) -> PrinterWorker:
+    worker = context.workers[printer1.id]
+    async with worker:
+        yield worker

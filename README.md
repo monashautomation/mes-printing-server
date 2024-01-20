@@ -31,43 +31,75 @@ poetry install
 
 ## Configuration
 
-Before running the printing server, you need to tell the server about dependencies:
+Configuration can be parsed from environment variables or a `.env` file.
 
-* URL of the database
-* URL of the OPCUA server
-* path to store uploaded GCode files
-
-You can set environment variables before running the server.
+You can generate a `.env` file for local development by running the shell command below.
+An [example env file](./.env.example) is also available.
 
 ```shell
-EXPORT DATABASE_URL='postgresql+asyncpg://username:password@localhost:5432/mes_printing'
+cat << EOF > .env
+DATABASE_URL='sqlite+aiosqlite://'
+OPCUA_SERVER_URL='opc.tcp://mock-server:4840'
+UPLOAD_PATH='./upload'
+EOF
+```
+
+Or setup environment variables directly
+
+```shell
+EXPORT DATABASE_URL='sqlite+aiosqlite://'
 EXPORT OPCUA_SERVER_URL='opc.tcp://127.0.0.1:4840'
-EXPORT UPLOAD_PATH='/var/lib/mes/gcode-files'
+EXPORT UPLOAD_PATH='./upload'
 ```
 
-Or you can use one env file and set an environment variable of the file path.
-See [the example env file](./.env.example)
+### Inspect current config
 
 ```shell
-EXPORT ENV_FILE='.env'
+poetry run setting
 ```
+
+### Required config
+
+* `DATABASE_URL`: URL of the database
+* `OPCUA_SERVER_URL`: URL of the OPCUA server
+* `UPLOAD_PATH`: path to store uploaded `GCode` files
+
+### Optional config
+
+* `PRINTER_WORKER_INTERVAL`: if set to `x`, all printer workers will run every `x` seconds
+* `MOCK_PRINTER_INTERVAL`: if set to `x`, all mock printers will update inner states every `x` seconds
+* `MOCK_PRINTER_JOB_TIME`: mock printers will take `MOCK_PRINTER_INTERVAL` * `MOCK_PRINTER_JOB_TIME` seconds to print
+  all printing jobs
 
 ## Mocking
 
-If you use `mock` as URL for an octoprint or OPCUA server,
-the program will mock one instead of establishing a connection.
+### OPC UA Server
 
-If you don't want to set up a database, you can use `sqlite+aiosqlite:///`
-as the database URL, the program will use an in-memory SQLite.
+If the OPC UA Server url contains `mock` (for example `opc.tcp://mock-server:4840`), the server will use a mock OPC UA
+server.
+
+### Mock Printer
+
+If value of a printer record's `api` column is `Mock`, the server will use a mock printer.
+
+```postgresql
+INSERT INTO public.printer (create_time, url, api_key, api, opcua_ns)
+VALUES ('2024-01-20 19:00:16.000000', 'http://localhost:5000', 'foobar', 'Mock', 1);
+```
+
+### In memory Database
+
+You can specify `sqlite+aiosqlite:///` as the database URL to tell the server to set up an in memory SQLite database.
 
 ## Run
 
 Run the printer server:
 
 ```shell
-export ENV_FILE='.env.local'
-uvicorn app.main:app
+poetry run server
 ```
+
+The API docs are available at `http://localhost:8000/docs`
 
 ## Test
 
@@ -87,11 +119,13 @@ poetry run black .
 
 ## Resources
 
+* [asyncio](https://docs.python.org/3/library/asyncio.html)
 * [pytest](https://docs.pytest.org/en/7.4.x/)
     * [How to invoke pytest](https://docs.pytest.org/en/7.1.x/how-to/usage.html)
     * [How to use fixtures](https://docs.pytest.org/en/7.4.x/how-to/fixtures.html)
 * [SQLAlchemy](https://www.sqlalchemy.org/)
     * [ORM Quick Start](https://docs.sqlalchemy.org/en/20/orm/quickstart.html)
     * [Writing SELECT statements for ORM Mapped Classes](https://docs.sqlalchemy.org/en/20/orm/queryguide/select.html)
+    * [Session.commit()](https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session.commit)
     * [asyncio extension](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#synopsis-orm)
     * [state management](https://docs.sqlalchemy.org/en/20/orm/session_state_management.html)

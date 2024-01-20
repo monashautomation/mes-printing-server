@@ -1,4 +1,4 @@
-from db.models import Order
+from db.models import Order, JobStatus
 
 
 async def test_create_order(session, user, order):
@@ -40,7 +40,7 @@ async def test_order_printer(session, order, printer):
     await session.upsert(order)
 
     order = await session.get(Order, order.id)
-    assert order.printer.octo_url == printer.octo_url
+    assert order.printer.url == printer.url
 
 
 async def test_assign_printer(session, user, printer, tmp_path):
@@ -58,7 +58,7 @@ async def test_approve(session, order):
     await session.approve_order(order)
 
     order = await session.get(Order, order.id)
-    assert order.approval_time is not None
+    assert order.approved
 
 
 async def test_start_printing(session, order):
@@ -67,7 +67,7 @@ async def test_start_printing(session, order):
     await session.start_printing(order)
 
     order = await session.get(Order, order.id)
-    assert order.print_start_time is not None
+    assert order.job_status == JobStatus.Printing
 
 
 async def test_finish_printing(session, order):
@@ -77,7 +77,7 @@ async def test_finish_printing(session, order):
     await session.finish_printing(order)
 
     order = await session.get(Order, order.id)
-    assert order.print_end_time is not None
+    assert order.job_status == JobStatus.Printed
 
 
 async def test_cancel(session, order):
@@ -85,18 +85,7 @@ async def test_cancel(session, order):
     await session.cancel_order(order)
 
     order = await session.get(Order, order.id)
-    assert order.cancelled_time is not None
-
-
-async def test_cancel_twice(session, order):
-    await session.upsert(order)
-    await session.cancel_order(order)
-    t = order.cancelled_time
-
-    await session.cancel_order(order)
-
-    order = await session.get(Order, order.id)
-    assert t == order.cancelled_time
+    assert order.cancelled
 
 
 async def test_finish(session, order):
@@ -107,7 +96,7 @@ async def test_finish(session, order):
     await session.finish_order(order)
 
     order = await session.get(Order, order.id)
-    assert order.finish_time is not None
+    assert order.job_status == JobStatus.Finished
 
 
 async def test_get_current_order(session, order):
@@ -123,3 +112,7 @@ async def test_next_order_by_fifo(session, order):
     await session.approve_order(order)
     o = await session.next_order_fifo()
     assert order.id == o.id
+
+    await session.start_printing(order)
+    o = await session.next_order_fifo()
+    assert o is None

@@ -10,7 +10,7 @@ async def test_create_user(session, user):
 
 async def test_get_user(session, user):
     await session.upsert(user)
-    u = await session.get(User, 1)
+    u = await session.get(User, user.id)
 
     assert u is not None
     assert u.name == user.name

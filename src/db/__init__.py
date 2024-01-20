@@ -1,3 +1,2 @@
-__all__ = ["Database", "DatabaseSession", "models"]
-
 from db.core import Database, DatabaseSession
+import db.models

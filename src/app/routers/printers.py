@@ -3,7 +3,7 @@ from typing import Sequence, Annotated
 from fastapi import APIRouter, Form
 from pydantic import AnyUrl, PositiveInt
 
-from app.dependencies import app_ctx
+from app.dependencies import ctx
 from db.models import Printer
 
 router = APIRouter(prefix="/api/v1/printers", tags=["printers"])
@@ -11,7 +11,8 @@ router = APIRouter(prefix="/api/v1/printers", tags=["printers"])
 
 @router.get("/")
 async def all_printers() -> Sequence[Printer]:
-    return await app_ctx.session.all(Printer)
+    async with ctx.database.new_session() as session:
+        return await session.all(Printer)
 
 
 @router.post("")
@@ -36,5 +37,9 @@ async def add_printer(
         octo_api_key=octo_api_key,
         opcua_ns=opcua_ns,
     )
-    await app_ctx.session.upsert(printer)
+    async with ctx.database.new_session() as session:
+        await session.upsert(printer)
+        worker = ctx.printer_worker(printer)
+        worker.start()
+
     return {"id": printer.id}

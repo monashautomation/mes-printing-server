@@ -6,9 +6,9 @@ authors = ["Jicheng Zhi <jzhi0004@student.monash.edu>"]
 license = "MIT"
 readme = "README.md"
 packages = [
-    { include = "opcuax", from = "src" },
-    { include = "octo", from = "src" },
     { include = "db", from = "src" },
+    { include = "opcuax", from = "src" },
+    { include = "printer", from = "src" },
     { include = "worker", from = "src" },
     { include = "app", from = "src" },
 ]
@@ -26,6 +26,7 @@ fastapi = "^0.108.0"
 uvicorn = "^0.25.0"
 python-multipart = "^0.0.6"
 aiofiles = "^23.2.1"
+pydantic-settings = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.12.1"
@@ -37,7 +38,8 @@ async-timeout = "*"
 asyncio_mode = "auto"
 
 [tool.poetry.scripts]
-#start = "app:run"
+setting = "setting:display"
+server = "app:run"
 
 [build-system]
 requires = ["poetry-core"]
