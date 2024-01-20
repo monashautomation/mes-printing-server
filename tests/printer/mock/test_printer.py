@@ -19,7 +19,7 @@ async def mock_printer() -> MockPrinter:
     printer = MockPrinter(
         url="http://localhost:5000",
         interval=0.05,
-        job_time=100,
+        job_time=10,
         bed_expected=50,
         nozzle_expected=60,
     )

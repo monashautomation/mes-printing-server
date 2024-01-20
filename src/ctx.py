@@ -39,7 +39,7 @@ class AppContext:
     def from_env() -> "AppContext":
         return AppContext(settings=EnvAppSettings())
 
-    def actual_printer(self, printer: Printer, **kwargs) -> ActualPrinter:
+    def actual_printer(self, printer: Printer) -> ActualPrinter:
         match printer.api:
             case PrinterApi.OctoPrint:
                 return OctoPrinter(
@@ -51,7 +51,10 @@ class AppContext:
                 )
             case PrinterApi.Mock:
                 return MockPrinter(
-                    url=printer.url, api_key=printer.api_key, interval=2, **kwargs
+                    url=printer.url,
+                    api_key=printer.api_key,
+                    interval=self.settings.mock_printer_interval,
+                    job_time=self.settings.mock_printer_job_time,
                 )
             case _:
                 raise NotImplemented
@@ -64,20 +67,18 @@ class AppContext:
             printer_id=printer.id,
             opcua_printer=opcua_printer,
             actual_printer=actual_printer,
+            interval=self.settings.printer_worker_interval,
         )
-        return worker
-
-    def start_printer_worker(self, printer: Printer) -> None:
-        worker = self.printer_worker(printer)
-        worker.start()
         self.workers[printer.id] = worker
+        return worker
 
     async def start_printer_workers(self) -> None:
         async with self.database.new_session() as session:
             printers = await session.all(Printer)
 
             for printer in printers:
-                self.start_printer_worker(printer)
+                worker = self.printer_worker(printer)
+                worker.start()
 
     async def __aenter__(self):
         # ClientSession must be inited in an Awaitable
@@ -93,5 +94,3 @@ class AppContext:
 
         for worker in self.workers.values():
             worker.stop()
-
-        self.workers.clear()

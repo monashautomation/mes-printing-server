@@ -146,7 +146,7 @@ class MockPrinter(BaseActualPrinter):
             self.nozzle_actual = min(self.nozzle_actual + 10, self.nozzle_expected)
 
             if self._heating_finished():
-                job.time_used += 10
+                job.time_used += 1
 
     async def _run(self):
         try:

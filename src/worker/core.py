@@ -3,9 +3,8 @@ import logging
 from asyncio import Task
 from enum import StrEnum
 from logging import Logger
-from typing import Awaitable, Callable, Optional
+from typing import Awaitable, Callable
 
-import mes
 from db.core import DatabaseSession
 from db.models import Order
 from opcuax.objects import OpcuaPrinter
@@ -22,30 +21,29 @@ class WorkerState(StrEnum):
     Error = "error"
     Printed = "Printed"
     WaitPickup = "WaitPickup"
-    Picked = "Picked"
 
 
 class WorkerEvent(StrEnum):
     Cancel = "Cancel"
     Picked = "Picked"
-    Stop = "Stop"
 
 
-OrderFetcher = Callable[[], Awaitable[Optional[Order]]]
-PickupNotifier = Callable[[str], Awaitable[None]]
+OrderFetcher = Callable[[], Awaitable[Order | None]]
 
 
 class PrinterWorker:
     def __init__(
         self,
+        printer_id: int,
         session: DatabaseSession,
         actual_printer: ActualPrinter,
         opcua_printer: OpcuaPrinter,
-        printer_id: int,
-        order_fetcher: OrderFetcher = mes.next_printing_order,
-        pickup_notifier: PickupNotifier = mes.notify_pickup,
-        interval: int = 1,
+        order_fetcher: OrderFetcher | None = None,
+        interval: float = 1,
     ):
+        if order_fetcher is None:
+            order_fetcher = session.next_order_fifo
+
         self.name = f"PrinterWorker{printer_id}"
         self.logger: Logger = logging.getLogger(name=self.name)
         self.session = session
@@ -58,63 +56,60 @@ class PrinterWorker:
         self._event_queue: asyncio.Queue[WorkerEvent] = asyncio.Queue()
 
         self.order_fetcher = order_fetcher
-        self.pickup_notifier = pickup_notifier
 
         self.interval = interval
-        self.task: Task | None = None
-
-    def start(self):
-        self.task = asyncio.create_task(self._run_loop(), name=self.name)
-
-    async def _run_loop(self):
-        while True:
-            await self.step()
-            await asyncio.sleep(self.interval)
-
-    async def _stop_loop(self):
-        self.task.cancel()
-        self.task = None
-        await self.session.close()
+        self._stop: bool = False
+        self._task: Task | None = None
 
     async def step(self):
         stat = await self.actual_printer.current_status()
         await self._update_opcua(stat)
 
-        if not self._event_queue.empty():
-            event = self._event_queue.get_nowait()
-            match event:
-                case WorkerEvent.Picked:
-                    self.state = WorkerState.Picked
-                case WorkerEvent.Cancel:
-                    await self.on_cancelled()
-                case WorkerEvent.Stop:
-                    await self._stop_loop()
-        else:
-            match self.state:
-                case WorkerState.Unsync:
-                    await self.when_unsync(stat)
-                case WorkerState.Ready:
-                    await self.when_ready()
-                case WorkerState.Printing:
-                    await self.when_printing(stat)
-                case WorkerState.Printed:
-                    await self.when_printed()
-                case WorkerState.WaitPickup:
-                    pass
-                case WorkerState.Picked:
-                    await self.when_picked()
+        if self._event_queue.empty():
+            await self.handle_state(stat)
+            return
 
-    def _send(self, event: WorkerEvent):
-        self._event_queue.put_nowait(event)
+        event = self._event_queue.get_nowait()
+
+        match event:
+            case WorkerEvent.Picked:
+                await self.on_picked()
+            case WorkerEvent.Cancel:
+                await self.on_cancelled()
+            case _:
+                raise NotImplemented
+
+    async def run(self):
+        async with self:
+            while not self._stop:
+                await self.step()
+                await asyncio.sleep(self.interval)
+
+    def start(self):
+        self._task = asyncio.create_task(self.run())
+
+    def stop(self):
+        self._stop = True
+        self._task = None
+
+    async def handle_state(self, stat: PrinterStatus):
+        match self.state:
+            case WorkerState.Unsync:
+                await self.when_unsync(stat)
+            case WorkerState.Ready:
+                await self.when_ready()
+            case WorkerState.Printing:
+                await self.when_printing(stat)
+            case WorkerState.Printed:
+                await self.when_printed()
+            case WorkerState.WaitPickup:
+                pass
 
     def pickup_finished(self):
         self._event_queue.put_nowait(WorkerEvent.Picked)
 
     def cancel_job(self):
         self._event_queue.put_nowait(WorkerEvent.Cancel)
-
-    def stop(self):
-        self._event_queue.put_nowait(WorkerEvent.Stop)
 
     async def when_unsync(self, stat: PrinterStatus) -> None:
         order = await self.session.current_order(self.printer_id)
@@ -138,7 +133,7 @@ class PrinterWorker:
                     case _:
                         # order is not the latest job => must have been picked or cancelled
                         # we assume it was printed and picked
-                        self.state = WorkerState.Picked
+                        await self.on_picked()
 
     async def when_ready(self) -> None:
         order: Order = await self.order_fetcher()  # get from the queue system
@@ -166,16 +161,16 @@ class PrinterWorker:
             self.state = WorkerState.Printed
 
     async def when_printed(self) -> None:
-        await self.actual_printer.delete_file(self.current_order.gcode_file_path)
-        await self.pickup_notifier(self.actual_printer.url)
+        await self.actual_printer.delete_file(self.current_order.gcode_filename())
+        await self.require_pickup()
 
         self.state = WorkerState.WaitPickup
 
-    async def when_picked(self) -> None:
+    async def on_picked(self) -> None:
         await self.session.picked(self.current_order)
         self.session.expire(self.current_order)
 
-        self.state = WorkerState.Ready
+        self.state = WorkerState.Unsync
         self.current_order = None
 
     async def on_cancelled(self) -> None:
@@ -197,6 +192,11 @@ class PrinterWorker:
         else:
             self.logger.info("wait until the discarded model is picked")
 
+    async def require_pickup(self):
+        self.logger.info(
+            f"simulate sending pickup request for printer {self.printer_id}"
+        )
+
     async def _update_opcua(self, stat: PrinterStatus) -> None:
         bed, nozzle, job = stat.temp_bed, stat.temp_nozzle, stat.job
 
@@ -213,3 +213,11 @@ class PrinterWorker:
             await self.opcua_printer.job_time.set(stat.job.time_used)
             await self.opcua_printer.job_time_left.set(stat.job.time_left)
             await self.opcua_printer.job_time_estimate.set(stat.job.time_approx)
+
+    async def __aenter__(self):
+        await self.session.__aenter__()
+        await self.actual_printer.__aenter__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.session.__aexit__(exc_type, exc_val, exc_tb)
+        await self.actual_printer.__aexit__(exc_type, exc_val, exc_tb)
