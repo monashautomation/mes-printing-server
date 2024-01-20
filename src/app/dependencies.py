@@ -1,3 +1,3 @@
-from config import AppContext
+from ctx import AppContext
 
-app_ctx = AppContext()
+ctx = AppContext.from_env()
