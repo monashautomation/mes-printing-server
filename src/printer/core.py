@@ -11,7 +11,7 @@ from printer.models import PrinterStatus, LatestJob
 class PrinterApi(StrEnum):
     OctoPrint = "OctoPrint"
     PrusaLink = "Prusa"
-    Mock = "mock"
+    Mock = "Mock"
 
 
 class BaseActualPrinter(ABC):
