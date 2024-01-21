@@ -7,10 +7,10 @@ from app.dependencies import ctx
 from db.models import Printer
 from printer import PrinterApi
 
-router = APIRouter(prefix="/api/v1/printers", tags=["printers"])
+router = APIRouter(prefix="/printers", tags=["printers"])
 
 
-@router.get("/")
+@router.get("")
 async def all_printers() -> Sequence[Printer]:
     async with ctx.database.new_session() as session:
         return await session.all(Printer)

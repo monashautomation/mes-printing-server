@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.dependencies import ctx
@@ -19,9 +19,18 @@ async def lifespan(app: FastAPI):
         yield
 
 
-app = FastAPI(lifespan=lifespan)
-app.include_router(printers.router)
-app.include_router(orders.router)
+app = FastAPI(
+    title="Printing Server",
+    lifespan=lifespan,
+    docs_url="/api/v1/docs",
+    openapi_url="/api/v1/openapi.json",
+)
+
+root_router = APIRouter(prefix="/api/v1")
+root_router.include_router(printers.router)
+root_router.include_router(orders.router)
+
+app.include_router(root_router)
 
 app.add_middleware(
     CORSMiddleware,
