@@ -121,10 +121,10 @@ class MockPrinter(BaseActualPrinter):
             raise NotFound
 
     def _file_in_use(self, gcode_path: str) -> bool:
-        return gcode_path in (job.file for job in self.jobs if not job.printed)
+        return gcode_path in (job.file for job in self.jobs if job.printing)
 
     def _printing_job(self) -> _Job | None:
-        return next((job for job in self.jobs if not job.printed), None)
+        return next((job for job in self.jobs if job.printing), None)
 
     def _heating_finished(self):
         return (

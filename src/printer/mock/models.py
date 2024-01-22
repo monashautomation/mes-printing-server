@@ -12,8 +12,8 @@ class _Job(BaseModel):
     stopped: bool = False
 
     @property
-    def printed(self) -> bool:
-        return not self.stopped and self.time_used >= self.time_estimated
+    def printing(self) -> bool:
+        return not self.stopped and self.time_used < self.time_estimated
 
     @property
     def progress(self) -> float:

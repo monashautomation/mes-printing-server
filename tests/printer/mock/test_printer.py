@@ -47,7 +47,19 @@ async def test_upload_file(mock_printer, gcode_path):
     assert gcode_path in mock_printer.files
 
 
-async def test_print_non_exist_file(mock_printer, gcode_path):
+async def test_delete_file(mock_printer, gcode_path):
+    await mock_printer.upload_file(gcode_path)
+    await mock_printer.delete_file(gcode_path)
+
+    assert len(mock_printer.files) == 0
+
+
+async def test_delete_non_existing_file(mock_printer, gcode_path):
+    with raises(NotFound):
+        await mock_printer.delete_file(gcode_path)
+
+
+async def test_print_non_existing_file(mock_printer, gcode_path):
     with raises(NotFound):
         await mock_printer.start_job(gcode_path)
 
@@ -123,6 +135,16 @@ async def test_progress(mock_printer, gcode_path):
 
 
 async def test_stop_job(mock_printer, gcode_path):
+    mock_printer.job_time = 1000
     await mock_printer.upload_file(gcode_path)
     await mock_printer.start_job(gcode_path)
     await mock_printer.stop_job()
+
+
+async def test_delete_printing_file(mock_printer, gcode_path):
+    mock_printer.job_time = 1000
+    await mock_printer.upload_file(gcode_path)
+    await mock_printer.start_job(gcode_path)
+
+    with raises(FileInUse):
+        await mock_printer.delete_file(gcode_path)
