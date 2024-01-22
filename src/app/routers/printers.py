@@ -36,7 +36,9 @@ async def add_printer(
         PrinterApi, Form(title="Printer API", examples=["OctoPrint", "Prusa", "Mock"])
     ],
 ):
-    printer = Printer(url=str(url), api_key=api_key, opcua_ns=opcua_ns, api=api)
+    printer = Printer(
+        url=str(url).rstrip("/"), api_key=api_key, opcua_ns=opcua_ns, api=api
+    )
     async with ctx.database.new_session() as session:
         await session.upsert(printer)
         worker = ctx.printer_worker(printer)
