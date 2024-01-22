@@ -15,7 +15,7 @@ OpcuaUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=["opc.tcp"])]
 
 class AppSettings(BaseSettings):
     database_url: AnyUrl
-    opcua_server_url: AnyUrl
+    opcua_server_url: OpcuaUrl
     upload_path: NewPath | DirectoryPath
     printer_worker_interval: PositiveFloat = 1
     mock_printer_interval: PositiveFloat = 2
