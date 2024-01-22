@@ -70,6 +70,8 @@ poetry run setting
 * `MOCK_PRINTER_INTERVAL`: if set to `x`, all mock printers will update inner states every `x` seconds
 * `MOCK_PRINTER_JOB_TIME`: mock printers will take `MOCK_PRINTER_INTERVAL` * `MOCK_PRINTER_JOB_TIME` seconds to print
   all printing jobs
+* `MOCK_PRINTER_TARGET_BED_TEMPERATURE`: target bed temperature of the mock printer
+* `MOCK_PRINTER_TARGET_BED_NOZZLE`: target nozzle temperature of the mock printer
 
 ## Mocking
 
@@ -99,7 +101,7 @@ Run the printer server:
 poetry run server
 ```
 
-The API docs are available at `http://localhost:8000/docs`
+The API docs are available at `http://localhost:8000/api/v1/docs`
 
 ## Test
 
