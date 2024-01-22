@@ -123,13 +123,18 @@ class PrinterWorker:
             case _, PrinterStatus(is_error=True):
                 self.logger.error("printer is in error state")
             case Order(), PrinterStatus(job=None):
-                self.logger.error("invalid order")
+                # could happen if printer storage is changed
+                # or server is restarted with mock printers
+                await self.on_picked()
             case Order(), PrinterStatus(job=job):
                 match job:
-                    case LatestJob(file_path=order.gcode_filename(), done=True):
-                        self.state = WorkerState.Printed
-                    case LatestJob(file_path=order.gcode_filename(), done=False):
-                        self.state = WorkerState.Printing
+                    case LatestJob(file_path=path) if path == order.gcode_filename():
+                        if job.done:
+                            self.state = WorkerState.Printed
+                        else:
+                            self.state = WorkerState.Printing
+                            if order.cancelled:
+                                self.cancel_job()
                     case _:
                         # order is not the latest job => must have been picked or cancelled
                         # we assume it was printed and picked
@@ -144,6 +149,7 @@ class PrinterWorker:
 
         self.logger.info("new job for order %d", order.id)
 
+        # TODO: lock
         order.printer_id = self.printer_id
         await self.session.upsert(order)
 
@@ -185,18 +191,18 @@ class PrinterWorker:
             self.logger.error("invalid cancellation when worker is %s", self.state)
             return
 
-        await self.session.cancel_order(self.current_order)
-
         if self.state == WorkerState.Printing:
             await self.actual_printer.stop_job()
-            self.state = WorkerState.Unsync  # wait until printer is ready
+            await self.actual_printer.delete_file(self.current_order.gcode_filename())
+
+            self.state = WorkerState.Printed
             self.session.expire(self.current_order)
             self.current_order = None
         else:
             self.logger.info("wait until the discarded model is picked")
 
     async def require_pickup(self):
-        self.logger.info(
+        self.logger.warning(
             f"simulate sending pickup request for printer {self.printer_id}"
         )
 

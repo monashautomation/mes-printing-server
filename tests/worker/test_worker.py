@@ -1,5 +1,7 @@
 import asyncio
 
+from ctx import AppContext
+from db.models import Order, JobStatus
 from printer import MockPrinter
 from setting import AppSettings
 from worker import PrinterWorker
@@ -67,3 +69,28 @@ async def test_cancel_when_waiting_pickup(
     await worker1.step()
 
     assert worker1.state == WorkerState.WaitPickup
+
+
+async def test_should_cancel_when_unsync(
+    worker1: PrinterWorker, context: AppContext, admin_approved_order: Order
+):
+    printer = worker1.actual_printer
+    gcode_filename = admin_approved_order.gcode_filename()
+
+    assert isinstance(printer, MockPrinter)
+    printer.job_time = 1000
+
+    async with context.database.new_session() as session:
+        order = await session.get(Order, admin_approved_order.id)
+        order.cancelled = True
+        order.job_status = JobStatus.Printing
+        await session.commit()
+
+    await printer.upload_file(gcode_filename)
+    await printer.start_job(gcode_filename)
+
+    await worker1.step()
+    assert worker1.state == WorkerState.Printing
+
+    await worker1.step()
+    assert worker1.state == WorkerState.Printed

@@ -6,7 +6,7 @@ import aiofiles
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
 
 from app.dependencies import ctx
-from db.models import Order, User
+from db.models import Order, User, JobStatus
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -40,7 +40,7 @@ async def submit_order(
         return {"id": order.id}
 
 
-@router.put("/{order_id}:approve")
+@router.put("/{order_id}:approve", status_code=HTTPStatus.NO_CONTENT)
 async def approve_order(order_id: int, user_id: str):
     async with ctx.database.new_session() as session:
         user = await session.get(User, user_id)
@@ -62,7 +62,6 @@ async def approve_order(order_id: int, user_id: str):
             )
 
         await session.approve_order(order)
-    return {"approved": True}
 
 
 @router.put("/{order_id}:cancel", status_code=HTTPStatus.NO_CONTENT)
@@ -75,7 +74,12 @@ async def cancel_order(order_id: int):
                 status_code=HTTPStatus.NOT_FOUND, detail="order not exist"
             )
 
-        await ctx.workers[order.printer_id].cancel_job()
+        # an order may be cancelled before being printed
+        await session.cancel_order(order_id)
+
+        if order.job_status in [JobStatus.Printing, JobStatus.Printed]:
+            worker = ctx.workers[order.printer_id]
+            worker.cancel_job()
 
 
 @router.get("/{order_id}")
