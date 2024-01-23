@@ -118,7 +118,7 @@ title: Printer Server ERD
 erDiagram
     User ||--o{ Order: has
     Order o|--|| Printer: "is printed by"
-    User{
+    User {
         string id PK "will move to Auth0"
         string name
         string permission "admin/user"
@@ -132,7 +132,7 @@ erDiagram
         int opcua_ns
         datetime create_time
     }
-    Order{
+    Order {
         int id PK
         string user_id FK
         int printer_id FK
@@ -156,6 +156,9 @@ poetry run black .
 
 ## Resources
 
+* Prusa Web Link
+    * [Wi-Fi and PrusaLink setup](https://help.prusa3d.com/guide/wi-fi-and-prusalink-setup-xl-firmware-up-to-4-7-5_419630)
+    * [Adding the printer to Prusa Connect](https://help.prusa3d.com/guide/adding-the-printer-to-prusa-connect-xl-firmware-up-to-4-7-5_420001)
 * [asyncio](https://docs.python.org/3/library/asyncio.html)
 * [pytest](https://docs.pytest.org/en/7.4.x/)
     * [How to invoke pytest](https://docs.pytest.org/en/7.1.x/how-to/usage.html)
