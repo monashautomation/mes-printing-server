@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlmodel import select, SQLModel, or_, not_
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from db.models import Base, Order, JobStatus
+from db.models import Base, Order, JobStatus, Printer
 
 DBModel = TypeVar("DBModel", bound=Base)
 DBSession = TypeVar("DBSession", bound=AsyncSession)
@@ -28,6 +28,11 @@ class DatabaseSession(AsyncSession):
 
     async def all(self, cls: Type[DBModel]) -> Sequence[DBModel]:
         result = await self.exec(select(cls))
+        return result.all()
+
+    async def active_printers(self) -> Sequence[Printer]:
+        stmt = select(Printer).where(Printer.is_active.is_(True))
+        result = await self.exec(stmt)
         return result.all()
 
     async def user_orders(self, user_id: str) -> Sequence[Order]:

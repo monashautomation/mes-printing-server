@@ -74,7 +74,7 @@ class AppContext:
 
     async def start_printer_workers(self) -> None:
         async with self.database.new_session() as session:
-            printers = await session.all(Printer)
+            printers = await session.active_printers()
 
             for printer in printers:
                 worker = self.printer_worker(printer)

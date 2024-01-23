@@ -29,6 +29,7 @@ class Printer(Base, table=True):
     api_key: str | None = Field(description="API key of the printer")
     api: PrinterApi = Field(description="API standard")
     opcua_ns: int = Field(description="namespace index of the OPCUA server object")
+    is_active: bool = Field(default=True)
 
 
 class JobStatus(StrEnum):
