@@ -1,6 +1,7 @@
-from datetime import datetime
 from http import HTTPStatus
+from pathlib import Path
 from typing import Annotated
+from uuid import uuid1
 
 import aiofiles
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
@@ -11,8 +12,8 @@ from db.models import Order, User, JobStatus
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
-def unique_filename(user_id):
-    return f"{user_id}-{int(datetime.now().timestamp())}.gcode"
+def unique_filename():
+    return f"{uuid1()}.gcode"
 
 
 @router.post("")
@@ -20,13 +21,20 @@ async def submit_order(
     user_id: Annotated[str, Form(title="user id", example=1)],
     file: Annotated[UploadFile, File(title="GCode file")],
 ):
+    filename = file.filename
+
+    if Path(filename).suffix != ".gcode":
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail="invalid file extension"
+        )
+
     async with ctx.database.new_session() as session:
         if not await session.exists(User, user_id):
             raise HTTPException(
                 status_code=HTTPStatus.NOT_FOUND, detail="user not exist"
             )
 
-        file_path = ctx.upload_path / unique_filename(user_id)
+        file_path = ctx.upload_path / unique_filename()
 
         async with aiofiles.open(file_path, "wb") as f:
             content = await file.read()
@@ -34,6 +42,7 @@ async def submit_order(
 
         order = Order(
             user_id=user_id,
+            original_filename=filename,
             gcode_file_path=str(file_path.absolute()),
         )
         await session.upsert(order)

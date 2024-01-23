@@ -42,6 +42,7 @@ class JobStatus(StrEnum):
 class Order(Base, table=True):
     user_id: str = Field(foreign_key="user.id")
     printer_id: int | None = Field(foreign_key="printer.id", default=None)
+    original_filename: str
     gcode_file_path: str
     job_status: JobStatus = Field(default=JobStatus.Pending)
     cancelled: bool = Field(default=False)
