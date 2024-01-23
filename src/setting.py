@@ -1,3 +1,4 @@
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import (
@@ -13,6 +14,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 OpcuaUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=["opc.tcp"])]
 
 
+class LoggingLevel(StrEnum):
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    ERROR = "ERROR"
+    WARNING = "WARNING"
+    CRITICAL = "CRITICAL"
+
+
 class AppSettings(BaseSettings):
     database_url: AnyUrl
     opcua_server_url: OpcuaUrl
@@ -22,6 +31,7 @@ class AppSettings(BaseSettings):
     mock_printer_job_time: PositiveInt = 30
     mock_printer_target_bed_temperature: PositiveInt = 100
     mock_printer_target_bed_nozzle: PositiveInt = 120
+    logging_level: LoggingLevel = LoggingLevel.INFO
 
 
 class EnvAppSettings(AppSettings):
