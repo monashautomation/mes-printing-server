@@ -27,6 +27,7 @@ uvicorn = "^0.25.0"
 python-multipart = "^0.0.6"
 aiofiles = "^23.2.1"
 pydantic-settings = "^2.1.0"
+python-rapidjson = "^1.14"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.12.1"

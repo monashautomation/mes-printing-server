@@ -75,17 +75,25 @@ class BaseHttpPrinter(BaseActualPrinter, ABC):
         super().__init__(url, api_key)
         self.session = session
 
-    def _request_params(self, endpoint: str) -> dict[str, Any]:
+    def _request_params(
+        self, endpoint: str, headers: dict[str, str] = None, **kwargs
+    ) -> dict[str, Any]:
+        h = {"X-Api-Key": self.api_key}
+        if headers is not None:
+            h.update(headers)
         return {
             "url": urljoin(self.url, endpoint),
-            "headers": {"X-Api-Key": self.api_key},
+            "headers": h,
         }
 
     def get(self, endpoint: str, **kwargs):
         return self.session.get(**self._request_params(endpoint), **kwargs)
 
-    def post(self, endpoint: str, **kwargs):
-        return self.session.post(**self._request_params(endpoint), **kwargs)
+    def post(self, endpoint: str, headers: dict[str, str] = None, **kwargs):
+        return self.session.post(**self._request_params(endpoint, headers), **kwargs)
+
+    def put(self, endpoint: str, headers: dict[str, str] = None, **kwargs):
+        return self.session.put(**self._request_params(endpoint, headers), **kwargs)
 
     def delete(self, endpoint: str, **kwargs):
         return self.session.delete(**self._request_params(endpoint), **kwargs)

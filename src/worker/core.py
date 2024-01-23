@@ -93,6 +93,9 @@ class PrinterWorker:
         self._task = None
 
     async def handle_state(self, stat: PrinterStatus):
+        self.logger.debug(
+            f"{self.state}, bed: {stat.temp_bed.actual}, nozzle: {stat.temp_nozzle.actual}"
+        )
         match self.state:
             case WorkerState.Unsync:
                 await self.when_unsync(stat)
@@ -153,7 +156,7 @@ class PrinterWorker:
         order.printer_id = self.printer_id
         await self.session.upsert(order)
 
-        await self.actual_printer.upload_file(order.gcode_filename())
+        await self.actual_printer.upload_file(order.gcode_file_path)
         await self.actual_printer.start_job(order.gcode_filename())
         await self.session.start_printing(order)
 
@@ -163,13 +166,11 @@ class PrinterWorker:
     async def when_printing(self, stat: PrinterStatus) -> None:
         job = stat.job
 
-        self.logger.info("job progress: %f", job.progress)
-
-        if job.done:
-            await self.session.finish_printing(self.current_order)
+        if job is None or job.done:
             self.state = WorkerState.Printed
 
     async def when_printed(self) -> None:
+        await self.session.finish_printing(self.current_order)
         await self.actual_printer.delete_file(self.current_order.gcode_filename())
         await self.require_pickup()
 
@@ -193,11 +194,7 @@ class PrinterWorker:
 
         if self.state == WorkerState.Printing:
             await self.actual_printer.stop_job()
-            await self.actual_printer.delete_file(self.current_order.gcode_filename())
-
             self.state = WorkerState.Printed
-            self.session.expire(self.current_order)
-            self.current_order = None
         else:
             self.logger.info("wait until the discarded model is picked")
 
@@ -226,6 +223,7 @@ class PrinterWorker:
     async def __aenter__(self):
         await self.session.__aenter__()
         await self.actual_printer.__aenter__()
+        return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.session.__aexit__(exc_type, exc_val, exc_tb)

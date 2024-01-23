@@ -25,7 +25,7 @@ class LatestJob(BaseModel):
     progress: float | None
     time_used: float | None
     time_left: float | None
-    time_approx: float | None
+    time_approx: float | None = None
 
     @property
     def done(self) -> bool:
@@ -35,9 +35,6 @@ class LatestJob(BaseModel):
 class PrinterState(StrEnum):
     Ready = "ready"
     Printing = "printing"
-    Paused = "paused"
-    # TODO: inherit from Prusa state, possible to remove it?
-    Stopped = "stopped"
     Error = "error"
 
 

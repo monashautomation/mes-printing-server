@@ -6,6 +6,10 @@ class FileInUse(ValueError):
     ...
 
 
+class FileAlreadyExists(ValueError):
+    ...
+
+
 class NotFound(ValueError):
     ...
 

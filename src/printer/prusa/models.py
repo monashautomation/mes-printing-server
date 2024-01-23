@@ -7,8 +7,8 @@ class PrusaPrinterStatus(BaseModel):
     target_nozzle: float
     temp_bed: float
     target_bed: float
-    axis_x: float | None
-    axis_y: float | None
+    axis_x: float | None = None
+    axis_y: float | None = None
     axis_z: float
 
 
@@ -26,6 +26,7 @@ class Status(BaseModel):
 
 class File(BaseModel):
     name: str
+    display_name: str
     path: str
 
 
@@ -34,3 +35,8 @@ class CurrentJob(BaseModel):
     file: File | None = None
     time_printing: int
     time_remaining: int | None = None
+
+
+class FileUpload(BaseModel):
+    name: str
+    display_name: str

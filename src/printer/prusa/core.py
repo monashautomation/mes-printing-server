@@ -1,21 +1,19 @@
 from pathlib import Path
 
+import rapidjson
+
 from printer.core import BaseHttpPrinter
-from printer.errors import Unauthorized, NotFound
+from printer.errors import Unauthorized, NotFound, FileInUse, FileAlreadyExists
 from printer.models import LatestJob, PrinterStatus, Temperature, PrinterState
 from printer.prusa.models import Status, CurrentJob
 
 
 def parse_state(state: str) -> PrinterState:
     match state.lower():
-        case "idle" | "ready" | "finished":
+        case "idle" | "ready" | "finished" | "stopped":
             return PrinterState.Ready
-        case "printing":
+        case "printing" | "paused":
             return PrinterState.Printing
-        case "paused":
-            return PrinterState.Paused
-        case "stopped":
-            return PrinterState.Stopped
         case "error":
             return PrinterState.Error
         case other:
@@ -45,25 +43,50 @@ class PrusaPrinter(BaseHttpPrinter):
 
     async def upload_file(self, gcode_path: str) -> None:
         filename = Path(gcode_path).name
-        files = {"file": open(gcode_path, "rb")}
+        file = open(gcode_path, "rb")
 
-        async with self.post(f"/api/v1/files/local/{filename}", data=files) as resp:
-            if resp.status != 201:
-                raise ValueError
+        # TODO: make sure storage is usb
+        async with self.put(
+            f"/api/v1/files/usb/{filename}",
+            data=file,
+            headers={"Print-After-Upload": "0"},
+        ) as resp:
+            print(f"debug - upload file {resp.status}")
+            match resp.status:
+                case 201 | 204:
+                    return None
+                case 404:
+                    raise NotFound
+                case 409:
+                    raise FileAlreadyExists
+                case 422:
+                    raise ValueError
 
     async def delete_file(self, gcode_path: str) -> None:
         filename = Path(gcode_path).name
 
-        async with self.delete(f"/api/v1/files/local/{filename}") as resp:
-            if resp.status != 204:
-                raise ValueError
+        async with self.delete(f"/api/v1/files/usb/{filename}") as resp:
+            match resp.status:
+                case 204:
+                    return
+                case 404:
+                    raise NotFound
+                case 409:
+                    raise FileInUse
 
     async def start_job(self, gcode_path: str) -> None:
         filename = Path(gcode_path).name
 
-        async with self.post(f"/api/v1/files/local/{filename}") as resp:
-            if resp.status != 204:
-                raise ValueError
+        async with self.post(f"/api/v1/files/usb/{filename}") as resp:
+            match resp.status:
+                case 204:
+                    return
+                case 401:
+                    raise Unauthorized
+                case 404:
+                    raise NotFound
+                case 409:
+                    raise ValueError
 
     async def stop_job(self) -> None:
         job = await self.latest_job()
@@ -83,16 +106,21 @@ class PrusaPrinter(BaseHttpPrinter):
             if resp.status == 204:
                 return None
 
-            model: CurrentJob = await resp.json(loads=CurrentJob.model_validate_json)
+            text = await resp.text()
+            data = rapidjson.loads(
+                text, parse_mode=rapidjson.PM_COMMENTS | rapidjson.PM_TRAILING_COMMAS
+            )
+            model: CurrentJob = CurrentJob(**data)
+
             time_used, time_left = model.time_printing, model.time_remaining
             progress = None
 
-            if time_left is not None:
+            if time_left is not None and (time_used + time_left) > 0:
                 progress = time_used / (time_used + time_left)
 
             return LatestJob(
                 id=model.id,
-                file_path=model.file.name,
+                file_path=model.file.display_name,
                 progress=progress,
                 time_used=model.time_printing,
                 time_left=model.time_remaining,
