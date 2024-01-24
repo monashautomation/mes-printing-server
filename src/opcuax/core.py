@@ -27,6 +27,20 @@ class OpcuaClient(AsyncuaClient):
         return obj_type(client=self, ns=ns)
 
 
+class OpcuaVariable(Generic[OpcuaValue]):
+    __opcua_object__: "OpcuaObject"
+
+    def __init__(self, name: str, default: Optional[OpcuaValue] = None):
+        self.name: str = name
+        self.default: Optional[OpcuaValue] = default
+
+    async def get(self) -> OpcuaValue:
+        return await self.__opcua_object__.get(self)
+
+    async def set(self, value: OpcuaValue) -> None:
+        await self.__opcua_object__.set(self, value)
+
+
 class OpcuaObject:
     def __new__(cls, client: _OpcuaClient, ns: int, *args, **kwargs):
         obj = super().__new__(cls, *args, **kwargs)
@@ -34,12 +48,11 @@ class OpcuaObject:
         obj.__ns__ = ns
 
         for name, cls_attr in cls.__dict__.items():
-            if isinstance(cls_attr, OpcuaVariable):
-                mutator = AsyncMutator(
-                    name=cls_attr.name, default=cls_attr.default, client=client, ns=ns
-                )
-                setattr(obj, name, mutator)
-
+            match cls_attr:
+                case OpcuaVariable(name=var_name, default=var_default):
+                    var = OpcuaVariable(name=var_name, default=var_default)
+                    var.__opcua_object__ = obj
+                    setattr(obj, name, var)
         return obj
 
     def namespace(self) -> int:
@@ -48,27 +61,11 @@ class OpcuaObject:
     def client(self) -> _OpcuaClient:
         return self.__client__
 
+    def node_id(self, var: OpcuaVariable) -> str:
+        return f"ns={self.__ns__};s={var.name}"
 
-class OpcuaVariable(Generic[OpcuaValue]):
-    def __init__(self, name: str, default: Optional[OpcuaValue] = None):
-        self.name: str = name
-        self.default: Optional[OpcuaValue] = default
+    async def get(self, var: OpcuaVariable) -> OpcuaValue:
+        return await self.__client__.get(self.node_id(var), var.default)
 
-
-class AsyncMutator(Generic[OpcuaValue]):
-    def __init__(
-        self,
-        name: str,
-        client: OpcuaClient,
-        ns: int,
-        default: Optional[OpcuaValue] = None,
-    ):
-        self.client: OpcuaClient = client
-        self.node_id: str = f"ns={ns};s={name}"
-        self.default: Optional[OpcuaValue] = default
-
-    async def get(self) -> OpcuaValue:
-        return await self.client.get(self.node_id, self.default)
-
-    async def set(self, value: OpcuaValue) -> None:
-        await self.client.set(self.node_id, value)
+    async def set(self, var: OpcuaVariable, value: OpcuaValue) -> None:
+        await self.__client__.set(self.node_id(var), value)
