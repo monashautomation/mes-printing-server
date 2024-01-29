@@ -10,7 +10,7 @@ from printer import PrinterApi
 
 class Base(SQLModel):
     id: int | None = Field(primary_key=True, default=None)
-    create_time: datetime = Field(default=datetime.now())
+    create_time: datetime = Field(default_factory=datetime.now)
 
     def __eq__(self, other: Any):
         if not isinstance(other, type(self)) or self.id is None:
