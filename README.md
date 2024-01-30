@@ -154,7 +154,11 @@ erDiagram
 
 * Code and add unit tests
 
-* run linting checks by command `mypy`
+* run static typing checks
+
+  ```shell
+  mypy
+  ```
 
 * Submit a pull request
 
