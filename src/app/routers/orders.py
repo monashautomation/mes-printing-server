@@ -18,7 +18,7 @@ def unique_filename():
 
 @router.post("")
 async def submit_order(
-    user_id: Annotated[str, Form(title="user id", example=1)],
+    user_id: Annotated[str, Form(title="user id", examples=["google|3fse56a2"])],
     file: Annotated[UploadFile, File(title="GCode file")],
 ):
     filename = file.filename
