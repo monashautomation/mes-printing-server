@@ -3,7 +3,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
 from printer import PrinterApi
 

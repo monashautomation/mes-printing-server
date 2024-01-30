@@ -5,7 +5,7 @@ import pytest
 import pytest_asyncio
 
 from ctx import AppContext
-from db.models import User, Order, Printer
+from db.models import Order, Printer, User
 from printer import PrinterApi
 from setting import AppSettings
 
@@ -40,7 +40,7 @@ def printer1() -> Printer:
 
 
 @pytest.fixture
-def printers(printer1) -> List[Printer]:
+def printers(printer1) -> list[Printer]:
     return [
         printer1,
         Printer(

@@ -4,10 +4,10 @@ from typing import Annotated
 from uuid import uuid1
 
 import aiofiles
-from fastapi import APIRouter, File, UploadFile, Form, HTTPException
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.dependencies import ctx
-from db.models import Order, User, JobStatus
+from db.models import JobStatus, Order, User
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 

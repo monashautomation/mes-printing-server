@@ -1,7 +1,8 @@
-from typing import Sequence, Annotated
+from collections.abc import Sequence
+from typing import Annotated
 
 from fastapi import APIRouter, Form
-from pydantic import PositiveInt, HttpUrl
+from pydantic import HttpUrl, PositiveInt
 
 from app.dependencies import ctx
 from db.models import Printer

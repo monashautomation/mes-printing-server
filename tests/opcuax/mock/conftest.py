@@ -3,8 +3,8 @@ from typing import Tuple
 import pytest
 import pytest_asyncio
 
-from opcuax.mock import MockOpcuaClient
 from opcuax.core import OpcuaObject, OpcuaVariable
+from opcuax.mock import MockOpcuaClient
 
 
 class Printer(OpcuaObject):
@@ -12,7 +12,7 @@ class Printer(OpcuaObject):
 
 
 @pytest.fixture
-def printer1_name_node() -> Tuple[str, str]:
+def printer1_name_node() -> tuple[str, str]:
     return "ns=1;s=Printer_Name", "foobar"  # node id, value
 
 

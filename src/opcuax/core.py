@@ -1,6 +1,7 @@
-from typing import TypeVar, Optional, Type, Generic
+from typing import Generic, Optional, Type, TypeVar
 
-from asyncua import Client as AsyncuaClient, ua
+from asyncua import Client as AsyncuaClient
+from asyncua import ua
 
 OpcuaValue = TypeVar("OpcuaValue", int, str, float, bool)
 _OpcuaClient = TypeVar("_OpcuaClient", bound="OpcuaClient")
@@ -12,9 +13,7 @@ class OpcuaClient(AsyncuaClient):
         super().__init__(url)
         self.url = url
 
-    async def get(
-        self, node_id: str, default: Optional[OpcuaValue] = None
-    ) -> OpcuaValue:
+    async def get(self, node_id: str, default: OpcuaValue | None = None) -> OpcuaValue:
         node = self.get_node(node_id)
         return await node.read_value()
 
@@ -23,16 +22,16 @@ class OpcuaClient(AsyncuaClient):
         data_type = await node.read_data_type_as_variant_type()
         await node.write_value(ua.DataValue(ua.Variant(value, data_type)))
 
-    def get_object(self, obj_type: Type[OpcuaObjectNode], ns: int) -> OpcuaObjectNode:
+    def get_object(self, obj_type: type[OpcuaObjectNode], ns: int) -> OpcuaObjectNode:
         return obj_type(client=self, ns=ns)
 
 
 class OpcuaVariable(Generic[OpcuaValue]):
     __opcua_object__: "OpcuaObject"
 
-    def __init__(self, name: str, default: Optional[OpcuaValue] = None):
+    def __init__(self, name: str, default: OpcuaValue | None = None):
         self.name: str = name
-        self.default: Optional[OpcuaValue] = default
+        self.default: OpcuaValue | None = default
 
     async def get(self) -> OpcuaValue:
         return await self.__opcua_object__.get(self)

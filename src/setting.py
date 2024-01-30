@@ -3,11 +3,11 @@ from typing import Annotated
 
 from pydantic import (
     AnyUrl,
-    NewPath,
     DirectoryPath,
-    UrlConstraints,
+    NewPath,
     PositiveFloat,
     PositiveInt,
+    UrlConstraints,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 

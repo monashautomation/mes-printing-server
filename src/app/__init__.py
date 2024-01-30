@@ -2,8 +2,8 @@ import logging
 
 import uvicorn
 
-from app.main import app
 from app.dependencies import ctx
+from app.main import app
 
 
 def run():

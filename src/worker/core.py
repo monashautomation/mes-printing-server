@@ -1,15 +1,15 @@
 import asyncio
 import logging
 from asyncio import Task
+from collections.abc import Awaitable, Callable
 from enum import StrEnum
 from logging import Logger
-from typing import Awaitable, Callable
 
 from db.core import DatabaseSession
 from db.models import Order
 from opcuax.objects import OpcuaPrinter
 from printer import ActualPrinter
-from printer.models import PrinterStatus, LatestJob
+from printer.models import LatestJob, PrinterStatus
 
 
 class WorkerState(StrEnum):

@@ -1,16 +1,13 @@
-from typing import TypeVar, Sequence, Optional, Type
+from collections.abc import Sequence
+from typing import Optional, Type, TypeVar
 
 from pydantic import AnyUrl
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    create_async_engine,
-    async_sessionmaker,
-)
-from sqlmodel import select, SQLModel, or_, not_
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
+from sqlmodel import SQLModel, not_, or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from db.models import Base, Order, JobStatus, Printer
+from db.models import Base, JobStatus, Order, Printer
 
 DBModel = TypeVar("DBModel", bound=Base)
 DBSession = TypeVar("DBSession", bound=AsyncSession)
@@ -22,11 +19,11 @@ class DatabaseSession(AsyncSession):
         await self.commit()
         await self.refresh(instance)
 
-    async def exists(self, cls: Type[DBModel], pk: int) -> bool:
+    async def exists(self, cls: type[DBModel], pk: int) -> bool:
         result = await self.get(cls, pk)
         return result is not None
 
-    async def all(self, cls: Type[DBModel]) -> Sequence[DBModel]:
+    async def all(self, cls: type[DBModel]) -> Sequence[DBModel]:
         result = await self.exec(select(cls))
         return result.all()
 
@@ -51,7 +48,7 @@ class DatabaseSession(AsyncSession):
         result = await self.exec(stmt)
         return result.one_or_none()
 
-    async def next_order_fifo(self) -> Optional[Order]:
+    async def next_order_fifo(self) -> Order | None:
         stmt = (
             select(Order)
             .where(

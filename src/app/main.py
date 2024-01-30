@@ -1,10 +1,10 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, APIRouter
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.dependencies import ctx
-from app.routers import printers, orders
+from app.routers import orders, printers
 
 origins = [
     "http://localhost",

@@ -4,7 +4,7 @@ import pytest
 import pytest_asyncio
 
 from db import Database, DatabaseSession
-from db.models import User, Order, Printer, PrinterApi
+from db.models import Order, Printer, PrinterApi, User
 
 
 @pytest_asyncio.fixture

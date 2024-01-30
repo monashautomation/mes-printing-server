@@ -1,12 +1,12 @@
 import asyncio
-from asyncio import Task, CancelledError
+from asyncio import CancelledError, Task
 
 from pydantic import HttpUrl
 
 from printer.core import BaseActualPrinter
-from printer.errors import FileInUse, NotFound, Unauthorized, PrinterIsBusy
+from printer.errors import FileInUse, NotFound, PrinterIsBusy, Unauthorized
 from printer.mock.models import _HeadPos, _Job
-from printer.models import PrinterStatus, LatestJob, Temperature, PrinterState
+from printer.models import LatestJob, PrinterState, PrinterStatus, Temperature
 
 
 class MockPrinter(BaseActualPrinter):

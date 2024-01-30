@@ -1,4 +1,4 @@
-from db.models import Order, JobStatus
+from db.models import JobStatus, Order
 
 
 async def test_create_order(session, user, order):

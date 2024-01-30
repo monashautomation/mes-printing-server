@@ -3,9 +3,9 @@ from pathlib import Path
 import rapidjson
 
 from printer.core import BaseHttpPrinter
-from printer.errors import Unauthorized, NotFound, FileInUse, FileAlreadyExists
-from printer.models import LatestJob, PrinterStatus, Temperature, PrinterState
-from printer.prusa.models import Status, CurrentJob
+from printer.errors import FileAlreadyExists, FileInUse, NotFound, Unauthorized
+from printer.models import LatestJob, PrinterState, PrinterStatus, Temperature
+from printer.prusa.models import CurrentJob, Status
 
 
 def parse_state(state: str) -> PrinterState:

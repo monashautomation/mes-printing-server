@@ -4,9 +4,9 @@ import pytest
 import pytest_asyncio
 from pytest import raises
 
-from printer.errors import NotFound, FileInUse, PrinterIsBusy
+from printer.errors import FileInUse, NotFound, PrinterIsBusy
 from printer.mock.core import MockPrinter
-from printer.models import Temperature, PrinterState
+from printer.models import PrinterState, Temperature
 
 
 @pytest.fixture

@@ -8,7 +8,7 @@ from db.models import Printer
 from opcuax.core import OpcuaClient
 from opcuax.mock import MockOpcuaClient
 from opcuax.objects import OpcuaPrinter
-from printer import PrinterApi, OctoPrinter, PrusaPrinter, MockPrinter, ActualPrinter
+from printer import ActualPrinter, MockPrinter, OctoPrinter, PrinterApi, PrusaPrinter
 from setting import AppSettings, EnvAppSettings
 from worker import PrinterWorker
 

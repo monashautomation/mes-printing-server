@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from enum import StrEnum
-from typing import TypeVar, Any
+from typing import Any, TypeVar
+from urllib.parse import urljoin
 
 from aiohttp import ClientSession
 from pydantic import HttpUrl
-from urllib.parse import urljoin
 
-from printer.models import PrinterStatus, LatestJob
+from printer.models import LatestJob, PrinterStatus
 
 
 class PrinterApi(StrEnum):

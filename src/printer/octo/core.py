@@ -1,9 +1,9 @@
 from pathlib import Path
 
 from printer.core import BaseHttpPrinter
-from printer.errors import NotFound, FileInUse, PrinterIsBusy
-from printer.models import LatestJob, PrinterStatus, Temperature, PrinterState
-from printer.octo.models import OctoPrinterStatus, CurrentJob, StateFlags
+from printer.errors import FileInUse, NotFound, PrinterIsBusy
+from printer.models import LatestJob, PrinterState, PrinterStatus, Temperature
+from printer.octo.models import CurrentJob, OctoPrinterStatus, StateFlags
 
 
 def parse_state(flags: StateFlags) -> PrinterState:
