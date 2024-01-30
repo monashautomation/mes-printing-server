@@ -146,13 +146,15 @@ erDiagram
 
 ## Contribute
 
-TODO: pre-commit hook
+* Install pre-commit hooks
 
-Make sure you format files with `black` before submitting a PR.
+  ```shell
+  pre-commit install
+  ```
 
-```shell
-poetry run black .
-```
+* Code and add unit tests
+
+* Submit a pull request
 
 ## Resources
 
