@@ -1,34 +1,43 @@
-from typing import Tuple
-
 import pytest
 import pytest_asyncio
 
-from opcuax.core import OpcuaObject, OpcuaVariable
-from opcuax.mock import MockOpcuaClient
+from opcuax import (
+    MockOpcuaClient,
+    OpcuaBoolVar,
+    OpcuaFloatVar,
+    OpcuaIntVar,
+    OpcuaObject,
+    OpcuaStrVar,
+)
+
+
+class PrinterJob(OpcuaObject):
+    finished = OpcuaBoolVar(name="Finished")
+    progress = OpcuaFloatVar(name="Progress")
 
 
 class Printer(OpcuaObject):
-    name = OpcuaVariable(name="Printer_Name", default="unknown")
+    name = OpcuaStrVar(name="Name", default="unknown")
+    number = OpcuaIntVar(name="Number")
+    job = PrinterJob(name="Job")
 
 
 @pytest.fixture
 def printer1_name_node() -> tuple[str, str]:
-    return "ns=1;s=Printer_Name", "foobar"  # node id, value
+    return "ns=1;s=Name", "foobar"  # node id, value
 
 
 @pytest_asyncio.fixture
 async def opcua_client() -> MockOpcuaClient:
-    client = MockOpcuaClient()
-    await client.connect()
-    yield client
-    await client.disconnect()
+    async with MockOpcuaClient() as client:
+        yield client
 
 
-@pytest.fixture
-def opcua_printer1(opcua_client) -> Printer:
-    return opcua_client.get_object(Printer, ns=1)
+@pytest_asyncio.fixture
+async def opcua_printer1(opcua_client) -> Printer:
+    return await opcua_client.get_object(Printer, name="printer1")
 
 
-@pytest.fixture
-def opcua_printer2(opcua_client) -> Printer:
-    return opcua_client.get_object(Printer, ns=2)
+@pytest_asyncio.fixture
+async def opcua_printer2(opcua_client) -> Printer:
+    return await opcua_client.get_object(Printer, name="printer2")

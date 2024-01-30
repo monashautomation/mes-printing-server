@@ -1,34 +1,27 @@
-from opcuax.core import OpcuaObject, OpcuaVariable
+from . import OpcuaFloatVar, OpcuaStrVar
+from .core import OpcuaObject, OpcuaVariable
+
+
+class PrinterHead(OpcuaObject):
+    x: OpcuaVariable[float] = OpcuaFloatVar(name="X")
+    y: OpcuaVariable[float] = OpcuaFloatVar(name="Y")
+    z: OpcuaVariable[float] = OpcuaFloatVar(name="Z")
+
+
+class PrinterJob(OpcuaObject):
+    file: OpcuaVariable[str] = OpcuaStrVar(name="File")
+    progress: OpcuaVariable[float] = OpcuaFloatVar(name="Progress")
+    time_left: OpcuaVariable[float] = OpcuaFloatVar(name="TimeLeft")
+    time_left_approx: OpcuaVariable[float] = OpcuaFloatVar(name="TimeLeftApprox")
+    time_used: OpcuaVariable[float] = OpcuaFloatVar(name="TimeUsed")
 
 
 class OpcuaPrinter(OpcuaObject):
-    program_id = OpcuaVariable(name="progID", default=0)
-    start = OpcuaVariable(name="start", default=False)
+    state: OpcuaVariable[str] = OpcuaStrVar(name="State")
+    noz_act_temp: OpcuaVariable[float] = OpcuaFloatVar(name="NozzleActualTemperature")
+    bed_act_temp: OpcuaVariable[float] = OpcuaFloatVar(name="BedActualTemperature")
+    noz_tar_temp: OpcuaVariable[float] = OpcuaFloatVar(name="NozzleTargetTemperature")
+    bed_tar_temp: OpcuaVariable[float] = OpcuaFloatVar(name="BedTargetTemperature")
 
-    part_removed = OpcuaVariable(name="Pc_PartRemoved", default=False)
-    bed_cleaned = OpcuaVariable(name="Pc_BedCleaned", default=False)
-
-    file = OpcuaVariable(name="Pc_File", default="Default")
-
-    jog_x = OpcuaVariable(name="Pc_JogX", default=0)
-    jog_y = OpcuaVariable(name="Pc_JogY", default=0)
-    jog_z = OpcuaVariable(name="Pc_JogZ", default=0)
-
-    ready = OpcuaVariable(name="Pf_Ready", default=False)
-    end = OpcuaVariable(name="Pf_End", default=True)
-
-    current_state = OpcuaVariable(name="Pd_State", default="Error")
-
-    bed_current_temperature = OpcuaVariable(name="Pd_tBedReal", default=0)
-    bed_target_temperature = OpcuaVariable(name="Pd_tBedTarget", default=0)
-
-    nozzle_current_temperature = OpcuaVariable(name="Pd_tNozReal", default=0)
-    nozzle_target_temperature = OpcuaVariable(name="Pd_tNozTarget", default=0)
-
-    job_file = OpcuaVariable(name="Pd_JobFile", default="Default")
-    job_progress = OpcuaVariable(name="Pd_JobProgress", default=0)
-    job_time = OpcuaVariable(name="Pd_JobTime", default=0)
-    job_time_left = OpcuaVariable(name="Pd_JobTimeLeft", default=0)
-    job_time_estimate = OpcuaVariable(name="Pd_JobTimeEst", default=0)
-
-    api_resp = OpcuaVariable(name="Pd_APIResp", default="default")
+    head: PrinterHead = PrinterHead(name="Head")
+    job: PrinterJob = PrinterJob(name="LatestJob")

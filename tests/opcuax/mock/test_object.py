@@ -2,36 +2,76 @@ import asyncio
 
 from async_timeout import timeout
 
-from opcuax.mock import MockOpcuaClient
+from opcuax.mock import MockOpcuaClient, MockOpcuaVariable
 from tests.opcuax.mock.conftest import Printer
 
 
-async def test_get_default(opcua_printer1, printer1_name_node):
-    node_id, _ = printer1_name_node
+async def test_get_default(opcua_printer1: Printer):
     value = await opcua_printer1.name.get()
-    client_value = await opcua_printer1.client().get(node_id)
 
     assert value == Printer.name.default
-    assert client_value == Printer.name.default
 
 
-async def test_get(opcua_printer1, printer1_name_node):
-    node_id, name = printer1_name_node
-    await opcua_printer1.client().set(node_id, name)
+async def test_get(opcua_printer1: Printer):
+    assert isinstance(opcua_printer1.name, MockOpcuaVariable)
+    opcua_printer1.name.value = "foo"
 
-    actual = await opcua_printer1.name.get()
-    assert actual == name
-
-
-async def test_set(opcua_printer1, printer1_name_node):
-    node_id, name = printer1_name_node
-    await opcua_printer1.name.set(name)
-
-    actual = await opcua_printer1.client().get(node_id)
-    assert actual == name
+    value = await opcua_printer1.name.get()
+    assert value == "foo"
 
 
-async def test_mutation(opcua_printer1, opcua_printer2):
+async def test_set(opcua_printer1: Printer):
+    await opcua_printer1.name.set("foo")
+
+    value = await opcua_printer1.name.get()
+    assert value == "foo"
+
+
+async def test_set_null(opcua_printer1: Printer):
+    await opcua_printer1.name.set("foo")
+    await opcua_printer1.name.set(None)
+
+    value = await opcua_printer1.name.get()
+    assert value == Printer.name.default
+
+
+async def test_nested_get(opcua_printer1: Printer):
+    value = await opcua_printer1.job.progress.get()
+    assert value == 0
+
+
+async def test_nested_set(opcua_printer1: Printer):
+    await opcua_printer1.job.finished.set(True)
+
+    value = await opcua_printer1.job.finished.get()
+    assert value
+
+
+async def test_to_dict(opcua_printer1: Printer):
+    data = await opcua_printer1.to_dict()
+
+    assert data == {
+        "name": Printer.name.default,
+        "number": Printer.number.default,
+        "job": {
+            "finished": Printer.job.finished.default,
+            "progress": Printer.job.progress.default,
+        },
+    }
+
+
+async def test_flattened_to_dict(opcua_printer1: Printer):
+    data = await opcua_printer1.to_dict(flatten=True)
+
+    assert data == {
+        "name": Printer.name.default,
+        "number": Printer.number.default,
+        "job_finished": Printer.job.finished.default,
+        "job_progress": Printer.job.progress.default,
+    }
+
+
+async def test_isolation(opcua_printer1: Printer, opcua_printer2: Printer):
     await opcua_printer1.name.set("foo")
     await opcua_printer2.name.set("bar")
 
@@ -44,8 +84,8 @@ async def test_mutation(opcua_printer1, opcua_printer2):
 
 async def test_concurrent_set():
     client = MockOpcuaClient(delay=0.25)
-    printer1 = client.get_object(Printer, ns=1)
-    printer2 = client.get_object(Printer, ns=2)
+    printer1 = await client.get_object(Printer, name="Printer1")
+    printer2 = await client.get_object(Printer, name="Printer2")
 
     async def update_name(foo: Printer, name: str):
         await foo.name.set(name)  # 0.25s
