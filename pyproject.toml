@@ -37,6 +37,7 @@ async-timeout = "*"
 isort = "^5.13.2"
 pre-commit = "^3.6.0"
 mypy = "^1.8.0"
+types-aiofiles = "^23.2.0.20240106"
 
 [tool.mypy]
 python_version = "3.11"
@@ -44,6 +45,11 @@ files = ["src/"]
 show_error_codes = true
 pretty = true
 strict = true
+implicit_reexport = true
+
+[[tool.mypy.overrides]]
+module = ["asyncua", "rapidjson"]
+ignore_missing_imports = true
 
 [tool.isort]
 profile = "black"
