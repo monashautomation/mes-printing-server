@@ -46,6 +46,7 @@ class PrinterWorker:
 
         self.name = f"PrinterWorker{printer_id}"
         self.logger: Logger = logging.getLogger(name=self.name)
+
         self.session = session
         self.actual_printer: ActualPrinter = actual_printer
         self.opcua_printer: OpcuaPrinter = opcua_printer
@@ -86,6 +87,7 @@ class PrinterWorker:
                 await asyncio.sleep(self.interval)
 
     def start(self):
+        self.logger.warning("printer worker starts for printer %d", self.printer_id)
         self._task = asyncio.create_task(self.run())
 
     def stop(self):
@@ -93,7 +95,7 @@ class PrinterWorker:
         self._task = None
 
     async def handle_state(self, stat: PrinterStatus):
-        self.logger.debug(
+        self.logger.info(
             f"{self.state}, bed: {stat.temp_bed.actual}, nozzle: {stat.temp_nozzle.actual}"
         )
         match self.state:
@@ -156,7 +158,7 @@ class PrinterWorker:
         order.printer_id = self.printer_id
         await self.session.upsert(order)
 
-        await self.actual_printer.upload_file(order.gcode_file_path)
+        await self.actual_printer.upload_file(order.gcode_filename())
         await self.actual_printer.start_job(order.gcode_filename())
         await self.session.start_printing(order)
 

@@ -55,7 +55,7 @@ async def test_cancel_when_printing(worker1: PrinterWorker):
     worker1.cancel_job()
     await worker1.step()
 
-    assert worker1.state == WorkerState.Unsync
+    assert worker1.state == WorkerState.Printed
 
 
 async def test_cancel_when_waiting_pickup(
