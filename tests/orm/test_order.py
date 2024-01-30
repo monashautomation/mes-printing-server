@@ -44,7 +44,7 @@ async def test_order_printer(session, order, printer):
 
 
 async def test_assign_printer(session, user, printer, tmp_path):
-    order = Order(user=user, gcode_file_path=str(tmp_path))
+    order = Order(user=user, gcode_file_path=str(tmp_path), original_filename="A.gcode")
     await session.upsert(order)
     await session.upsert(printer)
 

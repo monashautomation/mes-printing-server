@@ -30,4 +30,9 @@ def printer() -> Printer:
 
 @pytest.fixture
 def order(user: User, tmp_path: Path, printer: Printer) -> Order:
-    return Order(user=user, gcode_file_path=str(tmp_path), printer=printer)
+    return Order(
+        user=user,
+        gcode_file_path=str(tmp_path),
+        original_filename="A.gcode",
+        printer=printer,
+    )

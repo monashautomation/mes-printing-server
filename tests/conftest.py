@@ -77,7 +77,9 @@ def users(admin: User, customer: User) -> list[User]:
 
 @pytest.fixture
 def admin_new_order(admin) -> Order:
-    return Order(id=1, user_id=admin.id, gcode_file_path="A.gcode")
+    return Order(
+        id=1, user_id=admin.id, gcode_file_path="A.gcode", original_filename="A.gcode"
+    )
 
 
 @pytest.fixture
@@ -90,4 +92,5 @@ def admin_approved_order(admin, printer1, settings) -> Order:
         gcode_file_path=str(path.absolute()),
         printer_id=printer1.id,
         approved=True,
+        original_filename="A.gcode",
     )
