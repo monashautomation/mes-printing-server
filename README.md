@@ -128,8 +128,8 @@ erDiagram
         int id PK
         int url
         string api_key
-        string api "OctoPrint/Prusa/mock"
-        int opcua_ns
+        string api "OctoPrint/Prusa/Mock"
+        string opcua_name
         datetime create_time
     }
     Order {
