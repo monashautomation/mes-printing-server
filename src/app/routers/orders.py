@@ -84,7 +84,7 @@ async def cancel_order(order_id: int):
             )
 
         # an order may be cancelled before being printed
-        await session.cancel_order(order_id)
+        await session.cancel_order(order)
 
         if order.job_status in [JobStatus.Printing, JobStatus.Printed]:
             worker = ctx.workers[order.printer_id]
