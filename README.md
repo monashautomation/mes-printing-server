@@ -154,6 +154,8 @@ erDiagram
 
 * Code and add unit tests
 
+* run linting checks by command `mypy`
+
 * Submit a pull request
 
 ## Resources
