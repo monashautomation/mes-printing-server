@@ -2,7 +2,8 @@ from collections.abc import Sequence
 from typing import Annotated
 
 from fastapi import APIRouter, Form
-from pydantic import HttpUrl, PositiveInt
+from pydantic import HttpUrl
+from typing_extensions import TypedDict
 
 from app.dependencies import ctx
 from db.models import Printer
@@ -17,6 +18,10 @@ async def all_printers() -> Sequence[Printer]:
         return await session.all(Printer)
 
 
+class PrinterId(TypedDict):
+    id: int
+
+
 @router.post("")
 async def add_printer(
     url: Annotated[
@@ -25,24 +30,25 @@ async def add_printer(
     api_key: Annotated[
         str, Form(title="API key", examples=["79ED0684040E4B96A34C3ABF4EA0A96A"])
     ],
-    opcua_ns: Annotated[
-        PositiveInt,
+    opcua_name: Annotated[
+        str,
         Form(
-            title="namespace index of the OPC UA printer object",
-            lt=10000,
-            examples=[42],
+            title="browse name of the OPC UA printer object",
+            min_length=1,
+            examples=["Printer1"],
         ),
     ],
     api: Annotated[
         PrinterApi, Form(title="Printer API", examples=["OctoPrint", "Prusa", "Mock"])
     ],
-):
+) -> PrinterId:
     printer = Printer(
-        url=str(url).rstrip("/"), api_key=api_key, opcua_ns=opcua_ns, api=api
+        url=str(url).rstrip("/"), api_key=api_key, opcua_name=opcua_name, api=api
     )
     async with ctx.database.new_session() as session:
         await session.upsert(printer)
-        worker = ctx.printer_worker(printer)
+        worker = await ctx.printer_worker(printer)
         worker.start()
 
-    return {"id": printer.id}
+    assert printer.id is not None
+    return PrinterId(id=printer.id)

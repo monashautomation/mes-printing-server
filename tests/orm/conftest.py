@@ -24,7 +24,10 @@ def user() -> User:
 @pytest.fixture
 def printer() -> Printer:
     return Printer(
-        url="http://localhost:5000", api_key="key", opcua_ns=1, api=PrinterApi.OctoPrint
+        url="http://localhost:5000",
+        api_key="key",
+        opcua_name="Printer1",
+        api=PrinterApi.OctoPrint,
     )
 
 

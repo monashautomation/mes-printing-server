@@ -1,7 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
 
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -9,26 +8,27 @@ from printer import PrinterApi
 
 
 class Base(SQLModel):
-    id: int | None = Field(primary_key=True, default=None)
     create_time: datetime = Field(default_factory=datetime.now)
 
-    def __eq__(self, other: Any):
-        if not isinstance(other, type(self)) or self.id is None:
-            return False
-        return self.id == other.id
+
+class IntPK(Base):
+    id: int | None = Field(primary_key=True, default=None)
 
 
-class User(Base, table=True):
+class StrPK(Base):
     id: str | None = Field(primary_key=True, default=None)
+
+
+class User(StrPK, table=True):
     name: str = Field(unique=True, index=True)
     permission: str = Field(description="admin/user")
 
 
-class Printer(Base, table=True):
+class Printer(IntPK, table=True):
     url: str = Field(unique=True, description="Http URL of the printer")
     api_key: str | None = Field(description="API key of the printer")
     api: PrinterApi = Field(description="API standard")
-    opcua_ns: int = Field(description="namespace index of the OPCUA server object")
+    opcua_name: str = Field(description="browse name of the OPCUA server object")
     is_active: bool = Field(default=True)
 
 
@@ -40,7 +40,7 @@ class JobStatus(StrEnum):
     Finished = "finished"
 
 
-class Order(Base, table=True):
+class Order(IntPK, table=True):
     user_id: str = Field(foreign_key="user.id")
     printer_id: int | None = Field(foreign_key="printer.id", default=None)
     original_filename: str

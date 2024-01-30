@@ -12,7 +12,7 @@ async def context(
     async with context.database.new_session() as session:
         session.add_all([admin, printer1, admin_approved_order])
         await session.commit()
-    context.printer_worker(printer1)
+    await context.printer_worker(printer1)
     yield context
 
 

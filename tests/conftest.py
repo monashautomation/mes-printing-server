@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 
 import pytest
 import pytest_asyncio
@@ -19,6 +18,8 @@ def settings(tmp_path: Path) -> AppSettings:
         printer_worker_interval=0.01,
         mock_printer_interval=0.01,
         mock_printer_job_time=10,
+        mock_printer_target_bed_temperature=50,
+        mock_printer_target_bed_nozzle=60,
     )
 
 
@@ -35,7 +36,7 @@ def printer1() -> Printer:
         api=PrinterApi.Mock,
         url="http://pi1.lab:5000",
         octo_api_key="p1",
-        opcua_ns=1,
+        opcua_name="Printer1",
     )
 
 
@@ -48,14 +49,14 @@ def printers(printer1) -> list[Printer]:
             api=PrinterApi.Mock,
             url="http://pi2.lab:5000",
             octo_api_key="p2",
-            opcua_ns=2,
+            opcua_name="Printer2",
         ),
         Printer(
             id=3,
             api=PrinterApi.Mock,
             url="http://pi3.lab:5000",
             octo_api_key="p3",
-            opcua_ns=3,
+            opcua_name="Printer3",
         ),
     ]
 
