@@ -4,6 +4,7 @@ from asyncio import Task
 from collections.abc import Awaitable, Callable
 from enum import StrEnum
 from logging import Logger
+from types import TracebackType
 
 from db.core import DatabaseSession
 from db.models import Order
@@ -40,7 +41,7 @@ class PrinterWorker:
         opcua_printer: OpcuaPrinter,
         order_fetcher: OrderFetcher | None = None,
         interval: float = 1,
-    ):
+    ) -> None:
         if order_fetcher is None:
             order_fetcher = session.next_order_fifo
 
@@ -60,9 +61,9 @@ class PrinterWorker:
 
         self.interval = interval
         self._stop: bool = False
-        self._task: Task | None = None
+        self._task: Task[None] | None = None
 
-    async def step(self):
+    async def step(self) -> None:
         stat = await self.actual_printer.current_status()
         await self._update_opcua(stat)
 
@@ -80,21 +81,21 @@ class PrinterWorker:
             case _:
                 raise NotImplemented
 
-    async def run(self):
+    async def run(self) -> None:
         async with self:
             while not self._stop:
                 await self.step()
                 await asyncio.sleep(self.interval)
 
-    def start(self):
+    def start(self) -> None:
         self.logger.warning("printer worker starts for printer %d", self.printer_id)
         self._task = asyncio.create_task(self.run())
 
-    def stop(self):
+    def stop(self) -> None:
         self._stop = True
         self._task = None
 
-    async def handle_state(self, stat: PrinterStatus):
+    async def handle_state(self, stat: PrinterStatus) -> None:
         self.logger.info(
             f"{self.state}, bed: {stat.temp_bed.actual}, nozzle: {stat.temp_nozzle.actual}"
         )
@@ -110,10 +111,10 @@ class PrinterWorker:
             case WorkerState.WaitPickup:
                 pass
 
-    def pickup_finished(self):
+    def pickup_finished(self) -> None:
         self._event_queue.put_nowait(WorkerEvent.Picked)
 
-    def cancel_job(self):
+    def cancel_job(self) -> None:
         self._event_queue.put_nowait(WorkerEvent.Cancel)
 
     async def when_unsync(self, stat: PrinterStatus) -> None:
@@ -131,7 +132,7 @@ class PrinterWorker:
                 # could happen if printer storage is changed
                 # or server is restarted with mock printers
                 await self.on_picked()
-            case Order(), PrinterStatus(job=job):
+            case Order() as order, PrinterStatus(job=job):
                 match job:
                     case LatestJob(file_path=path) if path == order.gcode_filename():
                         if job.done:
@@ -146,7 +147,7 @@ class PrinterWorker:
                         await self.on_picked()
 
     async def when_ready(self) -> None:
-        order: Order = await self.order_fetcher()  # get from the queue system
+        order = await self.order_fetcher()  # get from the queue system
 
         if order is None:
             self.logger.debug("no pending orders")
@@ -172,6 +173,8 @@ class PrinterWorker:
             self.state = WorkerState.Printed
 
     async def when_printed(self) -> None:
+        assert self.current_order is not None
+
         await self.session.finish_printing(self.current_order)
         await self.actual_printer.delete_file(self.current_order.gcode_filename())
         await self.require_pickup()
@@ -179,6 +182,8 @@ class PrinterWorker:
         self.state = WorkerState.WaitPickup
 
     async def on_picked(self) -> None:
+        assert self.current_order is not None
+
         await self.session.picked(self.current_order)
         self.session.expire(self.current_order)
 
@@ -200,7 +205,7 @@ class PrinterWorker:
         else:
             self.logger.info("wait until the discarded model is picked")
 
-    async def require_pickup(self):
+    async def require_pickup(self) -> None:
         self.logger.warning(
             f"simulate sending pickup request for printer {self.printer_id}"
         )
@@ -208,25 +213,30 @@ class PrinterWorker:
     async def _update_opcua(self, stat: PrinterStatus) -> None:
         bed, nozzle, job = stat.temp_bed, stat.temp_nozzle, stat.job
 
-        await self.opcua_printer.current_state.set(stat.state)
+        await self.opcua_printer.state.set(stat.state)
 
-        await self.opcua_printer.bed_current_temperature.set(bed.actual)
-        await self.opcua_printer.bed_target_temperature.set(bed.target)
-        await self.opcua_printer.nozzle_current_temperature.set(nozzle.actual)
-        await self.opcua_printer.nozzle_target_temperature.set(nozzle.target)
+        await self.opcua_printer.bed_act_temp.set(bed.actual)
+        await self.opcua_printer.bed_tar_temp.set(bed.target)
+        await self.opcua_printer.noz_act_temp.set(nozzle.actual)
+        await self.opcua_printer.noz_tar_temp.set(nozzle.target)
 
         if job is not None:
-            await self.opcua_printer.job_file.set(stat.job.file_path)
-            await self.opcua_printer.job_progress.set(stat.job.progress)
-            await self.opcua_printer.job_time.set(stat.job.time_used)
-            await self.opcua_printer.job_time_left.set(stat.job.time_left)
-            await self.opcua_printer.job_time_estimate.set(stat.job.time_approx)
+            await self.opcua_printer.job.file.set(job.file_path)
+            await self.opcua_printer.job.progress.set(job.progress)
+            await self.opcua_printer.job.time_used.set(job.time_used)
+            await self.opcua_printer.job.time_left.set(job.time_left)
+            await self.opcua_printer.job.time_left_approx.set(job.time_approx)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "PrinterWorker":
         await self.session.__aenter__()
         await self.actual_printer.__aenter__()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         await self.session.__aexit__(exc_type, exc_val, exc_tb)
         await self.actual_printer.__aexit__(exc_type, exc_val, exc_tb)

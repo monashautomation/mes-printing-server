@@ -29,7 +29,7 @@ class LatestJob(BaseModel):
 
     @property
     def done(self) -> bool:
-        return self.progress and self.progress == 100
+        return self.progress is not None and self.progress == 100
 
 
 class PrinterState(StrEnum):

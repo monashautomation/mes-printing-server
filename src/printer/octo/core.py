@@ -9,10 +9,8 @@ from printer.octo.models import CurrentJob, OctoPrinterStatus, StateFlags
 def parse_state(flags: StateFlags) -> PrinterState:
     if flags.ready:
         return PrinterState.Ready
-    elif flags.printing:
+    elif flags.printing or flags.paused:
         return PrinterState.Printing
-    elif flags.paused:
-        return PrinterState.Paused
     elif flags.error or flags.closedOrError:
         return PrinterState.Error
     else:
@@ -32,14 +30,19 @@ class OctoPrinter(BaseHttpPrinter):
             model: OctoPrinterStatus = await resp.json(
                 loads=OctoPrinterStatus.model_validate_json
             )
+
+            assert model.temperature is not None
+
             bed, noz = model.temperature.bed, model.temperature.tool0
+
+            assert bed is not None and noz is not None
 
             job = await self.latest_job()
 
             return PrinterStatus(
                 state=parse_state(model.state.flags),
-                temp_bed=Temperature(actual=bed.actual, target=bed.target),
-                temp_nozzle=Temperature(actual=bed.actual, target=bed.target),
+                temp_bed=Temperature(actual=bed.actual or 0, target=bed.target or 0),
+                temp_nozzle=Temperature(actual=bed.actual or 0, target=bed.target or 0),
                 job=job,
             )
 
@@ -88,13 +91,15 @@ class OctoPrinter(BaseHttpPrinter):
         async with self.get("/api/job") as resp:
             model: CurrentJob = await resp.json(loads=CurrentJob.model_validate_json)
 
-            if model.job.file.name is None:
+            file = model.job.file
+
+            if file is None or file.name is None:
                 return None
 
             time_used = model.progress.printTime
 
             return LatestJob(
-                file_path=model.job.file.name,
+                file_path=file.name,
                 progress=model.progress.completion,
                 time_used=time_used,
                 time_left=model.progress.printTimeLeft,

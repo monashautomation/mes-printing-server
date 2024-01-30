@@ -1,10 +1,9 @@
 from collections.abc import Sequence
-from typing import Optional, Type, TypeVar
+from typing import TypeVar
 
 from pydantic import AnyUrl
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
-from sqlmodel import SQLModel, not_, or_, select
+from sqlmodel import SQLModel, col, not_, or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from db.models import Base, JobStatus, Order, Printer
@@ -19,7 +18,7 @@ class DatabaseSession(AsyncSession):
         await self.commit()
         await self.refresh(instance)
 
-    async def exists(self, cls: type[DBModel], pk: int) -> bool:
+    async def exists(self, cls: type[DBModel], pk: int | str) -> bool:
         result = await self.get(cls, pk)
         return result is not None
 
@@ -28,7 +27,7 @@ class DatabaseSession(AsyncSession):
         return result.all()
 
     async def active_printers(self) -> Sequence[Printer]:
-        stmt = select(Printer).where(Printer.is_active.is_(True))
+        stmt = select(Printer).where(col(Printer.is_active).is_(True))
         result = await self.exec(stmt)
         return result.all()
 
@@ -56,7 +55,7 @@ class DatabaseSession(AsyncSession):
                 not_(Order.cancelled),
                 Order.job_status == JobStatus.Pending,
             )
-            .order_by(Order.create_time)
+            .order_by(col(Order.create_time).desc())
         )
 
         result = await self.exec(stmt)

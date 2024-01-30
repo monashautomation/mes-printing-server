@@ -1,20 +1,19 @@
 from pathlib import Path
+from types import TracebackType
 
 from aiohttp import ClientSession
 from pydantic_core import Url
 
 from db import Database
 from db.models import Printer
-from opcuax.core import OpcuaClient
-from opcuax.mock import MockOpcuaClient
-from opcuax.objects import OpcuaPrinter
+from opcuax import MockOpcuaClient, OpcuaClient, OpcuaPrinter
 from printer import ActualPrinter, MockPrinter, OctoPrinter, PrinterApi, PrusaPrinter
 from setting import AppSettings, EnvAppSettings
 from worker import PrinterWorker
 
 
 def _opcua_client(url: Url) -> OpcuaClient:
-    if "mock" in url.host:
+    if url.host and "mock" in url.host:
         return MockOpcuaClient(url=str(url))
     else:
         return OpcuaClient(url=str(url))
@@ -59,16 +58,23 @@ class AppContext:
             case _:
                 raise NotImplemented
 
-    def printer_worker(self, printer: Printer) -> PrinterWorker:
-        opcua_printer = self.opcua_client.get_object(OpcuaPrinter, ns=printer.opcua_ns)
-        actual_printer = self.actual_printer(printer)
+    async def opcua_printer(self, printer: Printer) -> OpcuaPrinter:
+        return await self.opcua_client.get_object(OpcuaPrinter, name=printer.opcua_name)
+
+    async def printer_worker(self, printer: Printer) -> PrinterWorker:
+        assert printer.id is not None
+
+        virtual_printer = await self.opcua_printer(printer)
+        actual_printer: ActualPrinter = self.actual_printer(printer)
         worker = PrinterWorker(
             session=self.database.new_session(),
             printer_id=printer.id,
-            opcua_printer=opcua_printer,
+            opcua_printer=virtual_printer,
             actual_printer=actual_printer,
             interval=self.settings.printer_worker_interval,
         )
+        assert printer.id is not None
+
         self.workers[printer.id] = worker
         return worker
 
@@ -77,19 +83,24 @@ class AppContext:
             printers = await session.active_printers()
 
             for printer in printers:
-                worker = self.printer_worker(printer)
+                worker = await self.printer_worker(printer)
                 worker.start()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "AppContext":
         # ClientSession must be inited in an Awaitable
         self.http_session = ClientSession()
-        await self.opcua_client.connect()
+        await self.opcua_client.__aenter__()
         await self.database.create_db_and_tables()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        await self.opcua_client.__aexit__(exc_type, exc_val, exc_tb)
         await self.http_session.close()
-        await self.opcua_client.disconnect()
         await self.database.close()
 
         for worker in self.workers.values():

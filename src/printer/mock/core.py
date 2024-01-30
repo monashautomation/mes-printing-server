@@ -38,7 +38,7 @@ class MockPrinter(BaseActualPrinter):
 
         self.head_pos = _HeadPos(0, 0, 0)
 
-        self.task: Task | None = None
+        self.task: Task[None] | None = None
 
     async def setup(self) -> None:
         self.task = asyncio.create_task(self._run())
@@ -47,10 +47,10 @@ class MockPrinter(BaseActualPrinter):
         if self.task is not None:
             self.task.cancel()
 
-    async def connect(self):
+    async def connect(self) -> None:
         self.connected = True
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         self.connected = False
 
     async def current_status(self) -> PrinterStatus:
@@ -126,13 +126,13 @@ class MockPrinter(BaseActualPrinter):
     def _printing_job(self) -> _Job | None:
         return next((job for job in self.jobs if job.printing), None)
 
-    def _heating_finished(self):
+    def _heating_finished(self) -> bool:
         return (
             self.bed_actual >= self.bed_expected
             and self.nozzle_actual >= self.nozzle_expected
         )
 
-    def _update_states(self):
+    def _update_states(self) -> None:
         job = self._printing_job()
 
         if job is None:
@@ -148,7 +148,7 @@ class MockPrinter(BaseActualPrinter):
             if self._heating_finished():
                 job.time_used += 1
 
-    async def _run(self):
+    async def _run(self) -> None:
         try:
             while True:
                 self._update_states()

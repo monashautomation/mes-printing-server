@@ -90,6 +90,10 @@ class PrusaPrinter(BaseHttpPrinter):
 
     async def stop_job(self) -> None:
         job = await self.latest_job()
+
+        if job is None:
+            return
+
         async with self.delete(f"/api/v1/job/{job.id}") as resp:
             match resp.status:
                 case 204:
@@ -106,6 +110,7 @@ class PrusaPrinter(BaseHttpPrinter):
             if resp.status == 204:
                 return None
 
+            # json response may have trailing commas
             text = await resp.text()
             data = rapidjson.loads(
                 text, parse_mode=rapidjson.PM_COMMENTS | rapidjson.PM_TRAILING_COMMAS
@@ -113,14 +118,18 @@ class PrusaPrinter(BaseHttpPrinter):
             model: CurrentJob = CurrentJob(**data)
 
             time_used, time_left = model.time_printing, model.time_remaining
-            progress = None
+            file = model.file
+
+            assert file is not None
+
+            progress = 0.0
 
             if time_left is not None and (time_used + time_left) > 0:
                 progress = time_used / (time_used + time_left)
 
             return LatestJob(
                 id=model.id,
-                file_path=model.file.display_name,
+                file_path=file.display_name,
                 progress=progress,
                 time_used=model.time_printing,
                 time_left=model.time_remaining,

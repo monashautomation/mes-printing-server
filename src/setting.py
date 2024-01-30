@@ -1,4 +1,5 @@
 from enum import StrEnum
+from pathlib import Path
 from typing import Annotated
 
 from pydantic import (
@@ -23,9 +24,9 @@ class LoggingLevel(StrEnum):
 
 
 class AppSettings(BaseSettings):
-    database_url: AnyUrl
-    opcua_server_url: OpcuaUrl
-    upload_path: NewPath | DirectoryPath
+    database_url: AnyUrl = AnyUrl("sqlite+aiosqlite://")
+    opcua_server_url: OpcuaUrl = OpcuaUrl("opc.tcp://mock-server:4840")
+    upload_path: NewPath | DirectoryPath = Path("/var/lib/mes/gcode-files")
     printer_worker_interval: PositiveFloat = 1
     mock_printer_interval: PositiveFloat = 2
     mock_printer_job_time: PositiveInt = 30
@@ -40,7 +41,7 @@ class EnvAppSettings(AppSettings):
     )
 
 
-def display():
+def display() -> None:
     s = EnvAppSettings()
     s.upload_path.mkdir(exist_ok=True)
     print(s.model_dump_json(indent=4))
