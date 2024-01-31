@@ -85,8 +85,8 @@ server.
 If value of a printer record's `api` column is `Mock`, the server will use a mock printer.
 
 ```postgresql
-INSERT INTO public.printer (create_time, url, api_key, api, opcua_ns)
-VALUES ('2024-01-20 19:00:16.000000', 'http://localhost:5000', 'foobar', 'Mock', 1);
+INSERT INTO public.printer (create_time, url, api_key, api, opcua_name)
+VALUES ('2024-01-20 19:00:16.000000', 'http://localhost:5000', 'foobar', 'Mock', 'Printer1');
 ```
 
 ### In memory Database
