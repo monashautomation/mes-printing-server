@@ -48,17 +48,16 @@ class PrinterWorker:
         if order_fetcher is None:
             order_fetcher = session.next_order_fifo
 
-        self.name = f"PrinterWorker{printer_id}"
-        self.logger: Logger = logging.getLogger(name=self.name)
-
         self.session = session
         self.actual_printer: ActualPrinter = actual_printer
         self.opcua_printer: OpcuaPrinter = opcua_printer
         self.state: WorkerState = WorkerState.Unsync
         self.current_order: Order | None = None
         self.printer_id: int = printer_id
-
         self.opcua_client: OpcuaClient = opcua_client
+
+        self.name = f"PrinterWorker{printer_id} {self.actual_printer.url}"
+        self.logger: Logger = logging.getLogger(name=self.name)
 
         self._event_queue: asyncio.Queue[WorkerEvent] = asyncio.Queue()
 
