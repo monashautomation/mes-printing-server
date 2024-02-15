@@ -6,9 +6,11 @@ from enum import StrEnum
 from logging import Logger
 from types import TracebackType
 
+from mes_opcua_server.models import Printer as OpcuaPrinter
+from opcuax import OpcuaClient
+
 from db.core import DatabaseSession
 from db.models import Order
-from opcuax.objects import OpcuaPrinter
 from printer import ActualPrinter
 from printer.models import LatestJob, PrinterStatus
 
@@ -39,6 +41,7 @@ class PrinterWorker:
         session: DatabaseSession,
         actual_printer: ActualPrinter,
         opcua_printer: OpcuaPrinter,
+        opcua_client: OpcuaClient,
         order_fetcher: OrderFetcher | None = None,
         interval: float = 1,
     ) -> None:
@@ -54,6 +57,8 @@ class PrinterWorker:
         self.state: WorkerState = WorkerState.Unsync
         self.current_order: Order | None = None
         self.printer_id: int = printer_id
+
+        self.opcua_client: OpcuaClient = opcua_client
 
         self._event_queue: asyncio.Queue[WorkerEvent] = asyncio.Queue()
 
@@ -213,19 +218,19 @@ class PrinterWorker:
     async def _update_opcua(self, stat: PrinterStatus) -> None:
         bed, nozzle, job = stat.temp_bed, stat.temp_nozzle, stat.job
 
-        await self.opcua_printer.state.set(stat.state)
-
-        await self.opcua_printer.bed_act_temp.set(bed.actual)
-        await self.opcua_printer.bed_tar_temp.set(bed.target)
-        await self.opcua_printer.noz_act_temp.set(nozzle.actual)
-        await self.opcua_printer.noz_tar_temp.set(nozzle.target)
+        self.opcua_printer.state = stat.state
+        self.opcua_printer.bed.actual = bed.actual
+        self.opcua_printer.nozzle.target = nozzle.target
+        self.opcua_printer.nozzle.target = nozzle.target
 
         if job is not None:
-            await self.opcua_printer.job.file.set(job.file_path)
-            await self.opcua_printer.job.progress.set(job.progress)
-            await self.opcua_printer.job.time_used.set(job.time_used)
-            await self.opcua_printer.job.time_left.set(job.time_left)
-            await self.opcua_printer.job.time_left_approx.set(job.time_approx)
+            self.opcua_printer.job.file = job.file_path
+            self.opcua_printer.job.progress = job.progress
+            self.opcua_printer.job.time_used = job.time_used
+            self.opcua_printer.job.time_left = job.time_left
+            self.opcua_printer.job.time_left_approx = job.time_approx
+
+        await self.opcua_client.commit()
 
     async def __aenter__(self) -> "PrinterWorker":
         await self.session.__aenter__()

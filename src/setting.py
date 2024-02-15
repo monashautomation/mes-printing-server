@@ -26,6 +26,7 @@ class LoggingLevel(StrEnum):
 class AppSettings(BaseSettings):
     database_url: AnyUrl = AnyUrl("sqlite+aiosqlite://")
     opcua_server_url: OpcuaUrl = OpcuaUrl("opc.tcp://mock-server:4840")
+    opcua_server_namespace: str = "http://monashautomation.com/opcua-server"
     upload_path: NewPath | DirectoryPath = Path("/var/lib/mes/gcode-files")
     printer_worker_interval: PositiveFloat = 1
     mock_printer_interval: PositiveFloat = 2

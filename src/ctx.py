@@ -2,21 +2,45 @@ from pathlib import Path
 from types import TracebackType
 
 from aiohttp import ClientSession
+from mes_opcua_server.models import Printer as OpcuaPrinter
+from opcuax import OpcuaClient
+from opcuax.model import TBaseModel, TOpcuaModel
 from pydantic_core import Url
 
 from db import Database
 from db.models import Printer
-from opcuax import MockOpcuaClient, OpcuaClient, OpcuaPrinter
 from printer import ActualPrinter, MockPrinter, OctoPrinter, PrinterApi, PrusaPrinter
 from setting import AppSettings, EnvAppSettings
 from worker import PrinterWorker
 
 
-def _opcua_client(url: Url) -> OpcuaClient:
+class MockOpcuaClient(OpcuaClient):
+    def refresh(self, model: TBaseModel) -> None:
+        pass
+
+    def update(self, name: str, model: TOpcuaModel) -> TOpcuaModel:
+        return model
+
+    def commit(self) -> None:
+        pass
+
+    async def get_object(
+        self, model_class: type[TOpcuaModel], name: str
+    ) -> TOpcuaModel:
+        return model_class()
+
+    async def __aenter__(self):
+        pass
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
+def _opcua_client(url: Url, namespace: str) -> OpcuaClient:
     if url.host and "mock" in url.host:
-        return MockOpcuaClient(url=str(url))
+        return MockOpcuaClient(str(url), namespace)
     else:
-        return OpcuaClient(url=str(url))
+        return OpcuaClient(str(url), namespace)
 
 
 class AppContext:
@@ -31,7 +55,9 @@ class AppContext:
         self.settings = settings
         self.database = Database(settings.database_url)
         self.upload_path = settings.upload_path
-        self.opcua_client = _opcua_client(settings.opcua_server_url)
+        self.opcua_client = _opcua_client(
+            settings.opcua_server_url, settings.opcua_server_namespace
+        )
         self.workers = {}
 
     @staticmethod
@@ -58,13 +84,12 @@ class AppContext:
             case _:
                 raise NotImplemented
 
-    async def opcua_printer(self, printer: Printer) -> OpcuaPrinter:
-        return await self.opcua_client.get_object(OpcuaPrinter, name=printer.opcua_name)
-
     async def printer_worker(self, printer: Printer) -> PrinterWorker:
         assert printer.id is not None
 
-        virtual_printer = await self.opcua_printer(printer)
+        virtual_printer = await self.opcua_client.get_object(
+            OpcuaPrinter, printer.opcua_name
+        )
         actual_printer: ActualPrinter = self.actual_printer(printer)
         worker = PrinterWorker(
             session=self.database.new_session(),
@@ -72,6 +97,7 @@ class AppContext:
             opcua_printer=virtual_printer,
             actual_printer=actual_printer,
             interval=self.settings.printer_worker_interval,
+            opcua_client=self.opcua_client,
         )
         assert printer.id is not None
 
