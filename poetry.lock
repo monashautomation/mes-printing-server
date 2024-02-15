@@ -1156,7 +1156,7 @@ redis = "^5.0.1"
 type = "git"
 url = "https://github.com/monash-automation/mes-opcua-server.git"
 reference = "HEAD"
-resolved_reference = "481a4fd07e9d210142f893a50e3627bb91bdf60e"
+resolved_reference = "d8cbd0e74ee884fd503e959b396c9992e90bd1ea"
 
 [[package]]
 name = "mpld3"
@@ -1407,7 +1407,7 @@ pydantic-settings = "^2.1.0"
 type = "git"
 url = "https://github.com/monash-automation/opcuax.git"
 reference = "HEAD"
-resolved_reference = "14eeb16abfd6c88df43dd2e94500278df155b8d3"
+resolved_reference = "05ae618cce6a5ac50bee66281182da59f74262a9"
 
 [[package]]
 name = "packaging"

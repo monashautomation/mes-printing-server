@@ -7,7 +7,6 @@ license = "MIT"
 readme = "README.md"
 packages = [
     { include = "db", from = "src" },
-    { include = "opcuax", from = "src" },
     { include = "printer", from = "src" },
     { include = "worker", from = "src" },
     { include = "app", from = "src" },
