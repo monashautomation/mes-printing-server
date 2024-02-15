@@ -21,8 +21,9 @@ class MockOpcuaClient(OpcuaClient):
     def update(self, name: str, model: TOpcuaModel) -> TOpcuaModel:
         return model
 
-    def commit(self) -> None:
-        pass
+    async def commit(self) -> None:
+        while not self.update_tasks.empty():
+            self.update_tasks.get_nowait()
 
     async def get_object(
         self, model_class: type[TOpcuaModel], name: str
