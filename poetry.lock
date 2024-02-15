@@ -1156,7 +1156,7 @@ redis = "^5.0.1"
 type = "git"
 url = "https://github.com/monash-automation/mes-opcua-server.git"
 reference = "HEAD"
-resolved_reference = "46484514136346220e00968123660201916aaa73"
+resolved_reference = "481a4fd07e9d210142f893a50e3627bb91bdf60e"
 
 [[package]]
 name = "mpld3"
@@ -2304,4 +2304,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "0fe62d7a5e5beaba126fa56e11abfdacb297040de63787f9219ec5fff7621f7f"
+content-hash = "e9ea78c1927d17b70c42eaffaaeeefec17734ba0deedea0c16d9f2056396a4e3"
