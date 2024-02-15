@@ -18,7 +18,18 @@ The printing server runs several printer workers.
 Each worker maintains a connection to one octoprint server and call octoprint APIs when needed.
 Responses of APIs are pushed to the OPCUA server.
 
-## Build
+## Run in a Container
+
+```shell
+sudo docker build -t mes-printing-server .
+
+sudo docker run --rm --name mes-printing-server \
+ -v ./upload:/var/lib/mes/gcode-files \
+ -e UPLOAD_PATH="/var/lib/mes/gcode-files" \
+ mes-printing-server
+```
+
+## Run Locally
 
 We use [poetry](https://python-poetry.org/) to manage dependencies. Please
 first [install poetry](https://python-poetry.org/docs/#installation).

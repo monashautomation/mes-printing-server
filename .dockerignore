@@ -1,0 +1,9 @@
+.env
+.env.*
+
+*.secret
+
+tests/
+upload/
+examples/
+docs/
