@@ -2,6 +2,7 @@ import asyncio
 import logging
 from asyncio import Task
 from collections.abc import Awaitable, Callable
+from datetime import datetime
 from enum import StrEnum
 from logging import Logger
 from types import TracebackType
@@ -88,7 +89,10 @@ class PrinterWorker:
     async def run(self) -> None:
         async with self:
             while not self._stop:
-                await self.step()
+                try:
+                    await self.step()
+                except Exception as e:
+                    self.logger.exception(e)
                 await asyncio.sleep(self.interval)
 
     def start(self) -> None:
@@ -217,6 +221,8 @@ class PrinterWorker:
     async def _update_opcua(self, stat: PrinterStatus) -> None:
         bed, nozzle, job = stat.temp_bed, stat.temp_nozzle, stat.job
 
+        self.opcua_printer.url = self.actual_printer.url
+        self.opcua_printer.update_time = datetime.now()
         self.opcua_printer.state = stat.state
         self.opcua_printer.bed.actual = bed.actual
         self.opcua_printer.nozzle.target = nozzle.target
