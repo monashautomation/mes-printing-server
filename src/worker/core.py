@@ -104,9 +104,7 @@ class PrinterWorker:
         self._task = None
 
     async def handle_state(self, stat: PrinterStatus) -> None:
-        self.logger.info(
-            f"{self.state}, bed: {stat.temp_bed.actual}, nozzle: {stat.temp_nozzle.actual}"
-        )
+        self.logger.info(stat.model_dump())
         match self.state:
             case WorkerState.Unsync:
                 await self.when_unsync(stat)
