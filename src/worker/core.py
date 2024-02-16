@@ -222,9 +222,10 @@ class PrinterWorker:
         self.opcua_printer.url = self.actual_printer.url
         self.opcua_printer.update_time = datetime.now()
         self.opcua_printer.state = stat.state
+        self.opcua_printer.bed.target = bed.target
         self.opcua_printer.bed.actual = bed.actual
         self.opcua_printer.nozzle.target = nozzle.target
-        self.opcua_printer.nozzle.target = nozzle.target
+        self.opcua_printer.nozzle.actual = nozzle.actual
 
         if job is not None:
             self.opcua_printer.job.file = job.file_path
