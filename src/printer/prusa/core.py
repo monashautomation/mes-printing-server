@@ -10,7 +10,7 @@ from printer.prusa.models import CurrentJob, Status
 
 def parse_state(state: str) -> PrinterState:
     match state.lower():
-        case "idle" | "ready" | "finished" | "stopped":
+        case "idle" | "ready" | "finished" | "stopped" | "attention":
             return PrinterState.Ready
         case "printing" | "paused":
             return PrinterState.Printing
