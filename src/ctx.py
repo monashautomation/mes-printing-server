@@ -88,6 +88,9 @@ class AppContext:
     async def printer_worker(self, printer: Printer) -> PrinterWorker:
         assert printer.id is not None
 
+        if printer.id in self.workers:
+            return self.workers[printer.id]
+
         virtual_printer = await self.opcua_client.get_object(
             OpcuaPrinter, printer.opcua_name
         )
@@ -104,6 +107,15 @@ class AppContext:
 
         self.workers[printer.id] = worker
         return worker
+
+    async def start_printer_worker(self, printer: Printer) -> None:
+        worker = await self.printer_worker(printer)
+        worker.start()
+
+    async def stop_printer_worker(self, printer: Printer) -> None:
+        worker = await self.printer_worker(printer)
+        worker.stop()
+        del self.workers[printer.id]
 
     async def start_printer_workers(self) -> None:
         async with self.database.new_session() as session:

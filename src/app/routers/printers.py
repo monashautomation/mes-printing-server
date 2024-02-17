@@ -1,7 +1,8 @@
 from collections.abc import Sequence
+from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Form, HTTPException
 from pydantic import HttpUrl
 from typing_extensions import TypedDict
 
@@ -52,3 +53,33 @@ async def add_printer(
 
     assert printer.id is not None
     return PrinterId(id=printer.id)
+
+
+@router.put("{printer_id}:activate", status_code=HTTPStatus.NO_CONTENT)
+async def activate_printer(printer_id: int):
+    async with ctx.database.new_session() as session:
+        printer = await session.get(Printer, printer_id)
+
+        if printer is None:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND, detail="printer not exist"
+            )
+
+        printer.is_active = True
+        await session.upsert(printer)
+        await ctx.start_printer_worker(printer)
+
+
+@router.put("{printer_id}:deactivate", status_code=HTTPStatus.NO_CONTENT)
+async def activate_printer(printer_id: int):
+    async with ctx.database.new_session() as session:
+        printer = await session.get(Printer, printer_id)
+
+        if printer is None:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND, detail="printer not exist"
+            )
+
+        printer.is_active = False
+        await session.upsert(printer)
+        await ctx.stop_printer_worker(printer)

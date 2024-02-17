@@ -94,9 +94,11 @@ class PrinterWorker:
                 except Exception as e:
                     self.logger.exception(e)
                 await asyncio.sleep(self.interval)
+            self.logger.warning("printer worker stops for printer %d", self.printer_id)
 
     def start(self) -> None:
         self.logger.warning("printer worker starts for printer %d", self.printer_id)
+        self._stop = False
         self._task = asyncio.create_task(self.run())
 
     def stop(self) -> None:
