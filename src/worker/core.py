@@ -167,8 +167,8 @@ class PrinterWorker:
         order.printer_id = self.printer_id
         await self.session.upsert(order)
 
-        await self.actual_printer.upload_file(order.gcode_filename())
-        await self.actual_printer.start_job(order.gcode_filename())
+        await self.actual_printer.upload_file(order.gcode_file_path)
+        await self.actual_printer.start_job(order.gcode_file_path)
         await self.session.start_printing(order)
 
         self.current_order = order
