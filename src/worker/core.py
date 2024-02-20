@@ -234,7 +234,7 @@ class PrinterWorker:
             self.opcua_printer.job.progress = job.progress
             self.opcua_printer.job.time_used = job.time_used
             self.opcua_printer.job.time_left = job.time_left
-            self.opcua_printer.job.time_left_approx = job.time_approx
+            self.opcua_printer.job.time_left_approx = job.time_approx or 9999
 
         await self.opcua_client.commit()
 
