@@ -56,7 +56,7 @@ async def add_printer(
 
 
 @router.put("{printer_id}:activate", status_code=HTTPStatus.NO_CONTENT)
-async def activate_printer(printer_id: int):
+async def activate_printer(printer_id: int) -> None:
     async with ctx.database.new_session() as session:
         printer = await session.get(Printer, printer_id)
 
@@ -71,7 +71,7 @@ async def activate_printer(printer_id: int):
 
 
 @router.put("{printer_id}:deactivate", status_code=HTTPStatus.NO_CONTENT)
-async def activate_printer(printer_id: int):
+async def deactivate_printer(printer_id: int) -> None:
     async with ctx.database.new_session() as session:
         printer = await session.get(Printer, printer_id)
 
