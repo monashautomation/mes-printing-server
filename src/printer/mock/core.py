@@ -1,5 +1,6 @@
 import asyncio
 from asyncio import CancelledError, Task
+from pathlib import Path
 
 from pydantic import HttpUrl
 
@@ -68,7 +69,7 @@ class MockPrinter(BaseActualPrinter):
         if self._file_in_use(gcode_path):
             raise FileInUse
 
-        self.files.add(gcode_path)
+        self.files.add(Path(gcode_path).name)
 
     async def delete_file(self, gcode_path: str) -> None:
         self._check_connection()
@@ -81,7 +82,7 @@ class MockPrinter(BaseActualPrinter):
 
     async def start_job(self, gcode_path: str) -> None:
         self._check_connection()
-        self._check_file_exists(gcode_path)
+        self._check_file_exists(Path(gcode_path).name)
 
         if self._printing_job() is not None:
             raise PrinterIsBusy

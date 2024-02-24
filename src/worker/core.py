@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from asyncio import Task
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from datetime import datetime
 from enum import StrEnum
 from logging import Logger
@@ -43,12 +43,9 @@ class PrinterWorker:
         actual_printer: ActualPrinter,
         opcua_printer: OpcuaPrinter,
         opcua_client: OpcuaClient,
-        order_fetcher: OrderFetcher | None = None,
+        order_fetcher: AsyncGenerator[int | None, None],
         interval: float = 1,
     ) -> None:
-        if order_fetcher is None:
-            order_fetcher = session.next_order_fifo
-
         self.session = session
         self.actual_printer: ActualPrinter = actual_printer
         self.opcua_printer: OpcuaPrinter = opcua_printer
@@ -84,7 +81,7 @@ class PrinterWorker:
             case WorkerEvent.Cancel:
                 await self.on_cancelled()
             case _:
-                raise NotImplemented
+                raise NotImplementedError
 
     async def run(self) -> None:
         async with self:
@@ -155,15 +152,16 @@ class PrinterWorker:
                         await self.on_picked()
 
     async def when_ready(self) -> None:
-        order = await self.order_fetcher()  # get from the queue system
+        order_id: int | None = await anext(self.order_fetcher)
 
-        if order is None:
+        if order_id is None:
             self.logger.debug("no pending orders")
             return
 
+        order: Order = await self.session.get(Order, order_id)
+
         self.logger.info("new job for order %d", order.id)
 
-        # TODO: lock
         order.printer_id = self.printer_id
         await self.session.upsert(order)
 

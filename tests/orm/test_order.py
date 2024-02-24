@@ -105,14 +105,3 @@ async def test_get_current_order(session, order):
     await session.start_printing(order)
     o = await session.current_order(order.printer_id)
     assert order.id == o.id
-
-
-async def test_next_order_by_fifo(session, order):
-    await session.upsert(order)
-    await session.approve_order(order)
-    o = await session.next_order_fifo()
-    assert order.id == o.id
-
-    await session.start_printing(order)
-    o = await session.next_order_fifo()
-    assert o is None

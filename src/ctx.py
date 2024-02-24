@@ -1,3 +1,5 @@
+from collections import deque
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from types import TracebackType
 
@@ -7,8 +9,8 @@ from opcuax import OpcuaClient
 from opcuax.model import TBaseModel, TOpcuaModel
 from pydantic_core import Url
 
-from db import Database
-from db.models import Printer
+from db import Database, DatabaseSession
+from db.models import Order, Printer
 from printer import ActualPrinter, MockPrinter, OctoPrinter, PrinterApi, PrusaPrinter
 from setting import AppSettings, EnvAppSettings
 from worker import PrinterWorker
@@ -44,6 +46,21 @@ def _opcua_client(url: Url, namespace: str) -> OpcuaClient:
         return OpcuaClient(str(url), namespace)
 
 
+async def _pending_order_id_generator(
+    session: DatabaseSession,
+) -> AsyncGenerator[int | None, None]:
+    order_ids = deque()
+
+    while True:
+        if len(order_ids) == 0:
+            order_ids += await session.pending_order_ids()
+
+        if len(order_ids) > 0:
+            yield order_ids.popleft()
+        else:
+            yield None
+
+
 class AppContext:
     settings: AppSettings
     database: Database
@@ -51,6 +68,7 @@ class AppContext:
     opcua_client: OpcuaClient
     http_session: ClientSession
     workers: dict[int, PrinterWorker]
+    fifo_order_fetcher: AsyncGenerator[Order | None, None]
 
     def __init__(self, settings: AppSettings) -> None:
         self.settings = settings
@@ -60,6 +78,9 @@ class AppContext:
             settings.opcua_server_url, settings.opcua_server_namespace
         )
         self.workers = {}
+        self.fifo_order_fetcher = _pending_order_id_generator(
+            self.database.new_session()
+        )
 
     @staticmethod
     def from_env() -> "AppContext":
@@ -83,7 +104,7 @@ class AppContext:
                     job_time=self.settings.mock_printer_job_time,
                 )
             case _:
-                raise NotImplemented
+                raise NotImplementedError
 
     async def printer_worker(self, printer: Printer) -> PrinterWorker:
         assert printer.id is not None
@@ -102,6 +123,7 @@ class AppContext:
             actual_printer=actual_printer,
             interval=self.settings.printer_worker_interval,
             opcua_client=self.opcua_client,
+            order_fetcher=self.fifo_order_fetcher,
         )
         assert printer.id is not None
 

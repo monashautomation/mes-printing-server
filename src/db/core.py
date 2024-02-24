@@ -47,19 +47,19 @@ class DatabaseSession(AsyncSession):
         result = await self.exec(stmt)
         return result.one_or_none()
 
-    async def next_order_fifo(self) -> Order | None:
+    async def pending_order_ids(self) -> Sequence[int]:
         stmt = (
-            select(Order)
+            select(Order.id)
             .where(
                 Order.approved,
                 not_(Order.cancelled),
                 Order.job_status == JobStatus.Pending,
             )
-            .order_by(col(Order.create_time).desc())
+            .order_by(col(Order.create_time).asc())
         )
 
         result = await self.exec(stmt)
-        return result.first()
+        return result.all()
 
     async def approve_order(self, order: Order) -> None:
         order.approved = True
