@@ -68,6 +68,7 @@ class AppContext:
     opcua_client: OpcuaClient
     http_session: ClientSession
     workers: dict[int, PrinterWorker]
+    order_fetcher_session: DatabaseSession
     fifo_order_fetcher: AsyncGenerator[Order | None, None]
 
     def __init__(self, settings: AppSettings) -> None:
@@ -78,8 +79,9 @@ class AppContext:
             settings.opcua_server_url, settings.opcua_server_namespace
         )
         self.workers = {}
+        self.order_fetcher_session = self.database.new_session()
         self.fifo_order_fetcher = _pending_order_id_generator(
-            self.database.new_session()
+            self.order_fetcher_session
         )
 
     @staticmethod
@@ -162,6 +164,7 @@ class AppContext:
     ) -> None:
         await self.opcua_client.__aexit__(exc_type, exc_val, exc_tb)
         await self.http_session.close()
+        await self.order_fetcher_session.close()
         await self.database.close()
 
         for worker in self.workers.values():
