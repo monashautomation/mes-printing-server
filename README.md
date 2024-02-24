@@ -40,6 +40,25 @@ Then, use poetry to install dependencies:
 poetry install
 ```
 
+Next, create an `.env` file to store configuration.
+We'll use an in-memory DB and a simulated OPC UA server,
+so you don't need to set up other services for now.
+
+```shell
+cat << EOF > .env
+DATABASE_URL='sqlite+aiosqlite://'
+OPCUA_SERVER_URL='opc.tcp://mock-server:4840'
+UPLOAD_PATH='./upload'
+EOF
+```
+
+Finally, run the printing server in the virtual environment:
+
+```shell
+poetry shell
+poetry run server
+```
+
 ## Configuration
 
 Configuration can be parsed from environment variables or a `.env` file.
