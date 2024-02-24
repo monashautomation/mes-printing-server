@@ -3,7 +3,6 @@ import asyncio
 from ctx import AppContext
 from db.models import JobStatus, Order
 from printer import MockPrinter
-from setting import AppSettings
 from worker import PrinterWorker
 from worker.core import WorkerState
 
