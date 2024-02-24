@@ -112,11 +112,17 @@ server.
 
 ### Mock Printer
 
-If value of a printer record's `api` column is `Mock`, the server will use a mock printer.
+If `api` of a printer is `Mock`, the server will use a mock printer instead of calling REST APIs on a real printer.
 
-```postgresql
-INSERT INTO public.printer (create_time, url, api_key, api, opcua_name)
-VALUES ('2024-01-20 19:00:16.000000', 'http://localhost:5000', 'foobar', 'Mock', 'Printer1');
+```shell
+curl --location 'http://localhost:8000/api/v1/printers' \
+--header 'Content-Type: application/json' \
+--data '{
+    "url": "http://mock-printer1:5000",
+    "api": "Mock",
+    "api_key": "FJZ3PO9",
+    "opcua_name": "Printer1"
+}'
 ```
 
 ### In memory Database
