@@ -59,6 +59,8 @@ poetry shell
 poetry run server
 ```
 
+The API docs are available at `http://localhost:8000/api/v1/docs`
+
 ## Configuration
 
 Configuration can be parsed from environment variables or a `.env` file.
@@ -97,6 +99,7 @@ poetry run setting
 ### Optional config
 
 * `PRINTER_WORKER_INTERVAL`: if set to `x`, all printer workers will run every `x` seconds
+* `ORDER_FETCHER_INTERVAL`: if set to `x`, the printer server will fetch pending orders every `x` seconds
 * `MOCK_PRINTER_INTERVAL`: if set to `x`, all mock printers will update inner states every `x` seconds
 * `MOCK_PRINTER_JOB_TIME`: mock printers will take `MOCK_PRINTER_INTERVAL` * `MOCK_PRINTER_JOB_TIME` seconds to print
   all printing jobs
@@ -128,16 +131,6 @@ curl --location 'http://localhost:8000/api/v1/printers' \
 ### In memory Database
 
 You can specify `sqlite+aiosqlite:///` as the database URL to tell the server to set up an in memory SQLite database.
-
-## Run
-
-Run the printer server:
-
-```shell
-poetry run server
-```
-
-The API docs are available at `http://localhost:8000/api/v1/docs`
 
 ## Test
 
