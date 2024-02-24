@@ -14,6 +14,7 @@ async def test_unsync_to_ready(worker1: PrinterWorker):
 
 
 async def test_start_job(worker1: PrinterWorker):
+    await asyncio.sleep(0.2)  # wait order fetcher to fetch orders
     await worker1.step()
     await worker1.step()
 
@@ -44,6 +45,8 @@ async def test_pickup(worker1: PrinterWorker):
 
 
 async def test_cancel_when_printing(worker1: PrinterWorker):
+    await asyncio.sleep(0.2)  # wait order fetcher to fetch orders
+
     printer = worker1.actual_printer
     assert isinstance(printer, MockPrinter)
     printer.interval = 10

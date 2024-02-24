@@ -43,7 +43,7 @@ class PrinterWorker:
         actual_printer: ActualPrinter,
         opcua_printer: OpcuaPrinter,
         opcua_client: OpcuaClient,
-        order_fetcher: AsyncGenerator[int | None, None],
+        pending_order_ids: asyncio.Queue[int],
         interval: float = 1,
     ) -> None:
         self.session = session
@@ -59,7 +59,7 @@ class PrinterWorker:
 
         self._event_queue: asyncio.Queue[WorkerEvent] = asyncio.Queue()
 
-        self.order_fetcher = order_fetcher
+        self.pending_orders = pending_order_ids
 
         self.interval = interval
         self._stop: bool = False
@@ -152,12 +152,11 @@ class PrinterWorker:
                         await self.on_picked()
 
     async def when_ready(self) -> None:
-        order_id: int | None = await anext(self.order_fetcher)
-
-        if order_id is None:
+        if self.pending_orders.empty():
             self.logger.debug("no pending orders")
             return
 
+        order_id = self.pending_orders.get_nowait()
         order: Order = await self.session.get(Order, order_id)
 
         self.logger.info("new job for order %d", order.id)
