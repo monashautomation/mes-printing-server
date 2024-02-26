@@ -11,7 +11,7 @@ from opcuax.model import TBaseModel, TOpcuaModel
 from pydantic_core import Url
 
 from db import Database, DatabaseSession
-from db.models import Order, Printer
+from db.models import Printer
 from printer import ActualPrinter, MockPrinter, OctoPrinter, PrinterApi, PrusaPrinter
 from setting import AppSettings, EnvAppSettings
 from worker import PrinterWorker
@@ -139,6 +139,7 @@ class AppContext:
         worker = PrinterWorker(
             session=self.database.new_session(),
             printer_id=printer.id,
+            opcua_name=printer.opcua_name,
             opcua_printer=virtual_printer,
             actual_printer=actual_printer,
             interval=self.settings.printer_worker_interval,

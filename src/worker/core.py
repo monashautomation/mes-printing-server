@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from asyncio import Task
-from collections.abc import AsyncGenerator, Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 from enum import StrEnum
 from logging import Logger
@@ -14,6 +14,8 @@ from db.core import DatabaseSession
 from db.models import Order
 from printer import ActualPrinter
 from printer.models import LatestJob, PrinterStatus
+
+from .extra import update_hardcoded_data
 
 
 class WorkerState(StrEnum):
@@ -39,6 +41,7 @@ class PrinterWorker:
     def __init__(
         self,
         printer_id: int,
+        opcua_name: str,
         session: DatabaseSession,
         actual_printer: ActualPrinter,
         opcua_printer: OpcuaPrinter,
@@ -47,6 +50,7 @@ class PrinterWorker:
         interval: float = 1,
     ) -> None:
         self.session = session
+        self.opcua_name = opcua_name
         self.actual_printer: ActualPrinter = actual_printer
         self.opcua_printer: OpcuaPrinter = opcua_printer
         self.state: WorkerState = WorkerState.Unsync
@@ -217,6 +221,8 @@ class PrinterWorker:
 
     async def _update_opcua(self, stat: PrinterStatus) -> None:
         bed, nozzle, job = stat.temp_bed, stat.temp_nozzle, stat.job
+
+        update_hardcoded_data(self.opcua_name, self.opcua_printer)
 
         self.opcua_printer.url = self.actual_printer.url
         self.opcua_printer.update_time = datetime.now()

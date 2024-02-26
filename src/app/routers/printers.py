@@ -1,8 +1,7 @@
 from collections.abc import Sequence
 from http import HTTPStatus
-from typing import Annotated
 
-from fastapi import APIRouter, Form, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, HttpUrl
 from typing_extensions import TypedDict
 
