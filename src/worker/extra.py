@@ -8,8 +8,12 @@ class ExtraPrinterData(BaseModel):
 
 
 extra_data: dict[str, ExtraPrinterData] = {
-    "Printer0": ExtraPrinterData(model="Prusa XL 5 heads"),
-    "Printer1": ExtraPrinterData(model="Prusa XL 2 heads"),
+    "Printer0": ExtraPrinterData(
+        model="Prusa XL 5 heads", camera_url="http://172.32.1.90:8080/?action=stream"
+    ),
+    "Printer1": ExtraPrinterData(
+        model="Prusa XL 2 heads", camera_url="http://172.32.1.91:8080/?action=stream"
+    ),
     "Printer2": ExtraPrinterData(
         model="Prusa XL 1 head", camera_url="http://172.32.1.92:8080/?action=stream"
     ),
@@ -22,8 +26,12 @@ extra_data: dict[str, ExtraPrinterData] = {
     "Printer5": ExtraPrinterData(
         model="Prusa XL 1 head", camera_url="http://172.32.1.95:8080/?action=stream"
     ),
-    "Printer6": ExtraPrinterData(model="Prusa XL 1 head"),
-    "Printer7": ExtraPrinterData(model="Prusa XL 1 head"),
+    "Printer6": ExtraPrinterData(
+        model="Prusa XL 1 head", camera_url="http://172.32.1.96:8080/?action=stream"
+    ),
+    "Printer7": ExtraPrinterData(
+        model="Prusa XL 1 head", camera_url="http://172.32.1.97:8080/?action=stream"
+    ),
 }
 
 
