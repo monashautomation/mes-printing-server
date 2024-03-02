@@ -30,6 +30,10 @@ class Printer(IntPK, table=True):
     api: PrinterApi = Field(description="API standard")
     opcua_name: str = Field(description="browse name of the OPCUA server object")
     is_active: bool = Field(default=True)
+    camera_url: str | None = Field(
+        description="url of the camera attached to the printer"
+    )
+    model: str | None = Field(description="model of the printer")
 
 
 class JobStatus(StrEnum):

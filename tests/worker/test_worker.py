@@ -26,7 +26,7 @@ async def test_print_job(worker1: PrinterWorker):
         await worker1.step()
         await asyncio.sleep(worker1.interval)
 
-    job = await worker1.actual_printer.latest_job()
+    job = await worker1.printer.actual.latest_job()
     assert job is not None
     assert worker1.state == WorkerState.WaitPickup
 
@@ -47,7 +47,7 @@ async def test_pickup(worker1: PrinterWorker):
 async def test_cancel_when_printing(worker1: PrinterWorker):
     await asyncio.sleep(0.2)  # wait order fetcher to fetch orders
 
-    printer = worker1.actual_printer
+    printer = worker1.printer.actual
     assert isinstance(printer, MockPrinter)
     printer.interval = 10
 
@@ -74,7 +74,7 @@ async def test_cancel_when_waiting_pickup(worker1: PrinterWorker):
 async def test_should_cancel_when_unsync(
     worker1: PrinterWorker, context: AppContext, admin_approved_order: Order
 ):
-    printer = worker1.actual_printer
+    printer = worker1.printer.actual
     gcode_filename = admin_approved_order.gcode_filename()
 
     assert isinstance(printer, MockPrinter)

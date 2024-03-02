@@ -6,17 +6,17 @@ from datetime import datetime
 from enum import StrEnum
 from logging import Logger
 from types import TracebackType
+from typing import NamedTuple
 
 from aiohttp import ClientConnectorError
 from mes_opcua_server.models import Printer as OpcuaPrinter
 from opcuax import OpcuaClient
 
+from db import Printer
 from db.core import DatabaseSession
 from db.models import Order
 from printer import ActualPrinter
 from printer.models import LatestJob, PrinterStatus
-
-from .extra import update_hardcoded_data
 
 
 class WorkerState(StrEnum):
@@ -38,6 +38,13 @@ class WorkerEvent(StrEnum):
 OrderFetcher = Callable[[], Awaitable[Order | None]]
 
 
+class _Printer(NamedTuple):
+    actual: ActualPrinter
+    opcua: OpcuaPrinter
+    model: Printer
+    opcua_name: str
+
+
 class PrinterWorker:
     def __init__(
         self,
@@ -46,20 +53,24 @@ class PrinterWorker:
         session: DatabaseSession,
         actual_printer: ActualPrinter,
         opcua_printer: OpcuaPrinter,
+        model: Printer,
         opcua_client: OpcuaClient,
         pending_order_ids: asyncio.Queue[int],
         interval: float = 1,
     ) -> None:
         self.session = session
-        self.opcua_name = opcua_name
-        self.actual_printer: ActualPrinter = actual_printer
-        self.opcua_printer: OpcuaPrinter = opcua_printer
+        self.printer: _Printer = _Printer(
+            actual=actual_printer,
+            opcua=opcua_printer,
+            model=model,
+            opcua_name=opcua_name,
+        )
         self.state: WorkerState = WorkerState.Unsync
         self.current_order: Order | None = None
         self.printer_id: int = printer_id
         self.opcua_client: OpcuaClient = opcua_client
 
-        self.name = f"Worker-{self.opcua_name}"
+        self.name = f"Worker-{self.printer.opcua_name}"
         self.logger: Logger = logging.getLogger(name=self.name)
 
         self._event_queue: asyncio.Queue[WorkerEvent] = asyncio.Queue()
@@ -71,7 +82,7 @@ class PrinterWorker:
         self._task: Task[None] | None = None
 
     async def step(self) -> None:
-        stat = await self.actual_printer.current_status()
+        stat = await self.printer.actual.current_status()
         await self._update_opcua(stat)
 
         if self._event_queue.empty():
@@ -171,8 +182,8 @@ class PrinterWorker:
         order.printer_id = self.printer_id
         await self.session.upsert(order)
 
-        await self.actual_printer.upload_file(order.gcode_file_path)
-        await self.actual_printer.start_job(order.gcode_file_path)
+        await self.printer.actual.upload_file(order.gcode_file_path)
+        await self.printer.actual.start_job(order.gcode_file_path)
         await self.session.start_printing(order)
 
         self.current_order = order
@@ -188,7 +199,7 @@ class PrinterWorker:
         assert self.current_order is not None
 
         await self.session.finish_printing(self.current_order)
-        await self.actual_printer.delete_file(self.current_order.gcode_filename())
+        await self.printer.actual.delete_file(self.current_order.gcode_filename())
         await self.require_pickup()
 
         self.state = WorkerState.WaitPickup
@@ -212,7 +223,7 @@ class PrinterWorker:
             return
 
         if self.state == WorkerState.Printing:
-            await self.actual_printer.stop_job()
+            await self.printer.actual.stop_job()
             self.state = WorkerState.Printed
         else:
             self.logger.info("wait until the discarded model is picked")
@@ -225,28 +236,32 @@ class PrinterWorker:
     async def _update_opcua(self, stat: PrinterStatus) -> None:
         bed, nozzle, job = stat.temp_bed, stat.temp_nozzle, stat.job
 
-        update_hardcoded_data(self.opcua_name, self.opcua_printer)
-
-        self.opcua_printer.url = self.actual_printer.url
-        self.opcua_printer.update_time = datetime.now()
-        self.opcua_printer.state = stat.state
-        self.opcua_printer.bed.target = bed.target
-        self.opcua_printer.bed.actual = bed.actual
-        self.opcua_printer.nozzle.target = nozzle.target
-        self.opcua_printer.nozzle.actual = nozzle.actual
+        self.printer.opcua.url = self.printer.actual.url
+        self.printer.opcua.update_time = datetime.now()
+        self.printer.opcua.state = stat.state
+        self.printer.opcua.bed.target = bed.target
+        self.printer.opcua.bed.actual = bed.actual
+        self.printer.opcua.nozzle.target = nozzle.target
+        self.printer.opcua.nozzle.actual = nozzle.actual
+        self.printer.opcua.camera_url = (
+            self.printer.model.camera_url or "http://localhost"
+        )
+        self.printer.opcua.model = self.printer.model.model or str(
+            self.printer.model.api
+        )
 
         if job is not None:
-            self.opcua_printer.job.file = job.file_path
-            self.opcua_printer.job.progress = job.progress
-            self.opcua_printer.job.time_used = job.time_used
-            self.opcua_printer.job.time_left = job.time_left
-            self.opcua_printer.job.time_left_approx = job.time_approx or 9999
+            self.printer.opcua.job.file = job.file_path
+            self.printer.opcua.job.progress = job.progress
+            self.printer.opcua.job.time_used = job.time_used
+            self.printer.opcua.job.time_left = job.time_left
+            self.printer.opcua.job.time_left_approx = job.time_approx or 9999
 
         await self.opcua_client.commit()
 
     async def __aenter__(self) -> "PrinterWorker":
         await self.session.__aenter__()
-        await self.actual_printer.__aenter__()
+        await self.printer.actual.__aenter__()
         return self
 
     async def __aexit__(
@@ -256,4 +271,4 @@ class PrinterWorker:
         exc_tb: TracebackType | None,
     ) -> None:
         await self.session.__aexit__(exc_type, exc_val, exc_tb)
-        await self.actual_printer.__aexit__(exc_type, exc_val, exc_tb)
+        await self.printer.actual.__aexit__(exc_type, exc_val, exc_tb)

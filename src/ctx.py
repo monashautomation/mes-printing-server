@@ -140,6 +140,7 @@ class AppContext:
             session=self.database.new_session(),
             printer_id=printer.id,
             opcua_name=printer.opcua_name,
+            model=printer,
             opcua_printer=virtual_printer,
             actual_printer=actual_printer,
             interval=self.settings.printer_worker_interval,

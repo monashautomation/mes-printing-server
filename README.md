@@ -159,6 +159,8 @@ erDiagram
         string api_key
         string api "OctoPrint/Prusa/Mock"
         string opcua_name
+        string model
+        string camera_url
         datetime create_time
     }
     Order {
