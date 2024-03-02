@@ -7,6 +7,7 @@ from enum import StrEnum
 from logging import Logger
 from types import TracebackType
 
+from aiohttp import ClientConnectorError
 from mes_opcua_server.models import Printer as OpcuaPrinter
 from opcuax import OpcuaClient
 
@@ -58,7 +59,7 @@ class PrinterWorker:
         self.printer_id: int = printer_id
         self.opcua_client: OpcuaClient = opcua_client
 
-        self.name = f"PrinterWorker{printer_id} {self.actual_printer.url}"
+        self.name = f"Worker-{self.opcua_name}"
         self.logger: Logger = logging.getLogger(name=self.name)
 
         self._event_queue: asyncio.Queue[WorkerEvent] = asyncio.Queue()
@@ -92,6 +93,8 @@ class PrinterWorker:
             while not self._stop:
                 try:
                     await self.step()
+                except ClientConnectorError:
+                    self.state = WorkerState.Unsync
                 except Exception as e:
                     self.logger.exception(e)
                 await asyncio.sleep(self.interval)
