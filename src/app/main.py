@@ -7,11 +7,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.dependencies import ctx
 from app.routers import orders, printers
 
-origins = [
-    "http://localhost",
-    "http://localhost:3000",
-]
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -35,7 +30,7 @@ app.include_router(root_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
