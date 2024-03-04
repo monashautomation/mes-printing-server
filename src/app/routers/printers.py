@@ -8,6 +8,7 @@ from typing_extensions import TypedDict
 from app.dependencies import ctx
 from db.models import Printer
 from printer import PrinterApi
+from worker import PrinterState, PrinterWorker
 
 router = APIRouter(prefix="/printers", tags=["printers"])
 
@@ -52,7 +53,7 @@ async def add_printer(model: CreatePrinter) -> PrinterId:
     return PrinterId(id=printer.id)
 
 
-@router.put("{printer_id}:activate", status_code=HTTPStatus.NO_CONTENT)
+@router.put("/{printer_id}:activate", status_code=HTTPStatus.NO_CONTENT)
 async def activate_printer(printer_id: int) -> None:
     async with ctx.database.new_session() as session:
         printer = await session.get(Printer, printer_id)
@@ -67,7 +68,7 @@ async def activate_printer(printer_id: int) -> None:
         await ctx.start_printer_worker(printer)
 
 
-@router.put("{printer_id}:deactivate", status_code=HTTPStatus.NO_CONTENT)
+@router.put("/{printer_id}:deactivate", status_code=HTTPStatus.NO_CONTENT)
 async def deactivate_printer(printer_id: int) -> None:
     async with ctx.database.new_session() as session:
         printer = await session.get(Printer, printer_id)
@@ -80,3 +81,19 @@ async def deactivate_printer(printer_id: int) -> None:
         printer.is_active = False
         await session.upsert(printer)
         await ctx.stop_printer_worker(printer)
+
+
+@router.get("/state/{printer_name}")
+async def printer_state(printer_name: str) -> PrinterState:
+    target = [
+        worker
+        for worker in ctx.workers.values()
+        if worker.printer.opcua_name == printer_name
+    ]
+    if len(target) != 1:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail="printer not exist"
+        )
+
+    [worker] = target
+    return await worker.latest_state()

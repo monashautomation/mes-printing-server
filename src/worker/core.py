@@ -45,6 +45,12 @@ class _Printer(NamedTuple):
     opcua_name: str
 
 
+class PrinterState(PrinterStatus):
+    name: str
+    model: str
+    camera_url: str
+
+
 class PrinterWorker:
     def __init__(
         self,
@@ -80,6 +86,7 @@ class PrinterWorker:
         self.interval = interval
         self._stop: bool = False
         self._task: Task[None] | None = None
+        self._latest_state: PrinterState | None = None
 
     async def step(self) -> None:
         stat = await self.printer.actual.current_status()
@@ -119,6 +126,12 @@ class PrinterWorker:
     def stop(self) -> None:
         self._stop = True
         self._task = None
+
+    async def latest_state(self) -> PrinterState:
+        while self._latest_state is None:
+            await asyncio.sleep(self.interval)
+        assert self._latest_state is not None
+        return self._latest_state
 
     async def handle_state(self, stat: PrinterStatus) -> None:
         self.logger.info(stat.model_dump())
@@ -234,7 +247,19 @@ class PrinterWorker:
         )
 
     async def _update_opcua(self, stat: PrinterStatus) -> None:
+        model = self.printer.model.model or str(self.printer.model.api)
+        camera_url = self.printer.model.camera_url or "http://localhost"
         bed, nozzle, job = stat.temp_bed, stat.temp_nozzle, stat.job
+
+        self._latest_state = PrinterState(
+            name=self.printer.opcua_name,
+            state=stat.state,
+            model=model,
+            camera_url=camera_url,
+            temp_bed=bed,
+            temp_nozzle=nozzle,
+            job=job,
+        )
 
         self.printer.opcua.url = self.printer.actual.url
         self.printer.opcua.update_time = datetime.now()
@@ -243,12 +268,8 @@ class PrinterWorker:
         self.printer.opcua.bed.actual = bed.actual
         self.printer.opcua.nozzle.target = nozzle.target
         self.printer.opcua.nozzle.actual = nozzle.actual
-        self.printer.opcua.camera_url = (
-            self.printer.model.camera_url or "http://localhost"
-        )
-        self.printer.opcua.model = self.printer.model.model or str(
-            self.printer.model.api
-        )
+        self.printer.opcua.camera_url = camera_url
+        self.printer.opcua.model = model
 
         if job is not None:
             self.printer.opcua.job.file = job.file_path

@@ -14,7 +14,7 @@ def parse_state(state: str) -> PrinterState:
             return PrinterState.Ready
         case "printing" | "paused":
             return PrinterState.Printing
-        case "error":
+        case "error" | "busy":
             return PrinterState.Error
         case other:
             raise ValueError(other)
