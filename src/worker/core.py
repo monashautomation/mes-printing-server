@@ -280,14 +280,16 @@ class PrinterWorker:
 
         await self.opcua_client.commit()
 
-    async def thumbnail(self) -> bytes | None:
+    async def previewed_model(self) -> bytes | None:
         if (
             not isinstance(self.printer.actual, PrusaPrinter)
-            or self._latest_state.job.thumbnail_url is None
+            or self._latest_state.job.previewed_model_url is None
         ):
             return None
 
-        return await self.printer.actual.thumbnail(self._latest_state.job.thumbnail_url)
+        return await self.printer.actual.previewed_model(
+            self._latest_state.job.previewed_model_url
+        )
 
     async def __aenter__(self) -> "PrinterWorker":
         await self.session.__aenter__()

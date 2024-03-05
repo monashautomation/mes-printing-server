@@ -30,7 +30,7 @@ async def printer_state(printer_name: str) -> PrinterState:
     responses={200: {"content": {"image/png": {}}}},
     response_class=Response,
 )
-async def printer_job_thumbnail(printer_name: str) -> Response:
+async def printer_job_previewed_model(printer_name: str) -> Response:
     target = [
         worker
         for worker in ctx.workers.values()
@@ -43,5 +43,5 @@ async def printer_job_thumbnail(printer_name: str) -> Response:
 
     [worker] = target
     # client must log in the Prusa printer to download the thumbnail
-    image_bytes = await worker.thumbnail()
+    image_bytes = await worker.previewed_model()
     return Response(content=image_bytes, media_type="image/png")

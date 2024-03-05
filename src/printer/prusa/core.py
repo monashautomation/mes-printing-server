@@ -131,22 +131,18 @@ class PrusaPrinter(BaseHttpPrinter):
             ):
                 progress = time_used / (time_used + time_left)
 
-            # thumbnail_url = model.file.refs.thumbnail
-            # if thumbnail_url is not None:
-            #     thumbnail_url = urljoin(self.url, thumbnail_url)
-
             return LatestJob(
                 id=model.id,
                 file_path=file.display_name,
-                thumbnail_url=model.file.refs.thumbnail,
+                previewed_model_url=file.refs.thumbnail,
                 progress=progress,
                 time_used=model.time_printing,
                 time_left=model.time_remaining,
             )
 
-    async def thumbnail(self, url: str) -> bytes:
+    async def previewed_model(self, url: str) -> bytes:
         async with self.get(url) as resp:
             if resp.status != 200:
-                raise ValueError
+                raise ValueError(resp.status)
 
             return await resp.read()
