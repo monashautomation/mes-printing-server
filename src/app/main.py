@@ -5,7 +5,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.dependencies import ctx
-from app.routers import orders, printers
+from app.routers import orders, printer, printers
 
 
 @asynccontextmanager
@@ -25,6 +25,7 @@ app = FastAPI(
 root_router = APIRouter(prefix="/api/v1")
 root_router.include_router(printers.router)
 root_router.include_router(orders.router)
+root_router.include_router(printer.router)
 
 app.include_router(root_router)
 
