@@ -21,6 +21,7 @@ class HeadPosition(BaseModel):
 class LatestJob(BaseModel):
     id: int | None = None
     file_path: str
+    thumbnail_url: str | None = None
     # TODO remove None
     progress: float | None
     time_used: float | None

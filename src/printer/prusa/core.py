@@ -1,4 +1,5 @@
 from pathlib import Path
+from urllib.parse import urljoin
 
 import rapidjson
 
@@ -122,14 +123,23 @@ class PrusaPrinter(BaseHttpPrinter):
 
             assert file is not None
 
-            progress = 0.0
+            progress = model.progress or 0.0
 
-            if time_left is not None and (time_used + time_left) > 0:
+            if (
+                model.progress is None
+                and time_left is not None
+                and (time_used + time_left) > 0
+            ):
                 progress = time_used / (time_used + time_left)
+
+            thumbnail_url = model.file.refs.thumbnail
+            if thumbnail_url is not None:
+                thumbnail_url = urljoin(self.url, thumbnail_url)
 
             return LatestJob(
                 id=model.id,
                 file_path=file.display_name,
+                thumbnail_url=thumbnail_url,
                 progress=progress,
                 time_used=model.time_printing,
                 time_left=model.time_remaining,

@@ -8,7 +8,7 @@ from typing_extensions import TypedDict
 from app.dependencies import ctx
 from db.models import Printer
 from printer import PrinterApi
-from worker import PrinterState, PrinterWorker
+from worker import PrinterState
 
 router = APIRouter(prefix="/printers", tags=["printers"])
 
