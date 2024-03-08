@@ -1,8 +1,24 @@
-INSERT INTO public.printer (create_time, id, url, api_key, api, opcua_name, camera_url, is_active, model) VALUES ('2024-02-22 00:18:58.299921', 6, 'http://172.32.1.218', 'CDHZEoLJzjCY9tx', 'PrusaLink', 'Printer5', 'http://172.32.1.95:8080/?action=stream', true, 'Prusa XL 1 head');
-INSERT INTO public.printer (create_time, id, url, api_key, api, opcua_name, camera_url, is_active, model) VALUES ('2024-02-22 02:10:04.492804', 8, 'http://172.32.1.175', 'EHWPEehfkkz74et', 'PrusaLink', 'Printer7', 'http://172.32.1.97:8080/?action=stream', true, 'Prusa XL 1 head');
-INSERT INTO public.printer (create_time, id, url, api_key, api, opcua_name, camera_url, is_active, model) VALUES ('2024-02-22 01:26:20.662075', 3, 'http://172.32.1.214', 'ApMtA4HB3xVYPyJ', 'PrusaLink', 'Printer2', 'http://172.32.1.92:8080/?action=stream', true, 'Prusa XL 1 head');
-INSERT INTO public.printer (create_time, id, url, api_key, api, opcua_name, camera_url, is_active, model) VALUES ('2024-02-22 04:23:17.868743', 5, 'http://172.32.1.184', 'ioBgSzJNP56wLhe', 'PrusaLink', 'Printer4', 'http://172.32.1.94:8080/?action=stream', true, 'Prusa XL 1 head');
-INSERT INTO public.printer (create_time, id, url, api_key, api, opcua_name, camera_url, is_active, model) VALUES ('2024-02-16 01:48:04.953401', 2, 'http://172.32.1.165', '4UAoWtP6LznK8CX', 'PrusaLink', 'Printer1', 'http://172.32.1.91:8080/?action=stream', true, 'Prusa XL 2 heads');
-INSERT INTO public.printer (create_time, id, url, api_key, api, opcua_name, camera_url, is_active, model) VALUES ('2024-02-22 01:22:49.058426', 4, 'http://172.32.1.123', 'w9d5PVd7FN6mC3o', 'PrusaLink', 'Printer3', 'http://172.32.1.93:8080/?action=stream', true, 'Prusa XL 1 head');
-INSERT INTO public.printer (create_time, id, url, api_key, api, opcua_name, camera_url, is_active, model) VALUES ('2024-02-22 01:12:22.503144', 1, 'http://172.32.1.118', 'QWZeFxQcjNmqvKG', 'PrusaLink', 'Printer0', 'http://172.32.1.90:8080/?action=stream', true, 'Prusa XL 5 heads');
-INSERT INTO public.printer (create_time, id, url, api_key, api, opcua_name, camera_url, is_active, model) VALUES ('2024-02-22 02:09:30.064351', 7, 'http://172.32.1.162', 'VCiTJAuBJLiVMUe', 'PrusaLink', 'Printer6', 'http://172.32.1.96:8080/?action=stream', true, 'Prusa XL 1 head');
+INSERT INTO public.printer (url, api_key, api, opcua_name, camera_url, is_active, model, create_time)
+VALUES ('http://172.32.1.118', 'QWZeFxQcjNmqvKG', 'PrusaLink', 'Printer0',
+        'http://172.32.1.90:8080/?action=stream', true, 'Prusa XL 5 heads', now());
+INSERT INTO public.printer (url, api_key, api, opcua_name, camera_url, is_active, model, create_time)
+VALUES ('http://172.32.1.187', '4UAoWtP6LznK8CX', 'PrusaLink', 'Printer1',
+        'http://172.32.1.91:8080/?action=stream', true, 'Prusa XL 2 heads', now());
+INSERT INTO public.printer (url, api_key, api, opcua_name, camera_url, is_active, model, create_time)
+VALUES ('http://172.32.1.214', 'ApMtA4HB3xVYPyJ', 'PrusaLink', 'Printer2',
+        'http://172.32.1.92:8080/?action=stream', true, 'Prusa XL 1 head', now());
+INSERT INTO public.printer (url, api_key, api, opcua_name, camera_url, is_active, model, create_time)
+VALUES ('http://172.32.1.123', 'w9d5PVd7FN6mC3o', 'PrusaLink', 'Printer3',
+        'http://172.32.1.93:8080/?action=stream', true, 'Prusa XL 1 head', now());
+INSERT INTO public.printer (url, api_key, api, opcua_name, camera_url, is_active, model, create_time)
+VALUES ('http://172.32.1.184', 'ioBgSzJNP56wLhe', 'PrusaLink', 'Printer4',
+        'http://172.32.1.94:8080/?action=stream', true, 'Prusa XL 1 head', now());
+INSERT INTO public.printer (url, api_key, api, opcua_name, camera_url, is_active, model, create_time)
+VALUES ('http://172.32.1.218', 'CDHZEoLJzjCY9tx', 'PrusaLink', 'Printer5',
+        'http://172.32.1.95:8080/?action=stream', true, 'Prusa XL 1 head', now());
+INSERT INTO public.printer (url, api_key, api, opcua_name, camera_url, is_active, model, create_time)
+VALUES ('http://172.32.1.162', 'VCiTJAuBJLiVMUe', 'PrusaLink', 'Printer6',
+        'http://172.32.1.96:8080/?action=stream', true, 'Prusa XL 1 head', now());
+INSERT INTO public.printer (url, api_key, api, opcua_name, camera_url, is_active, model, create_time)
+VALUES ('http://172.32.1.175', 'EHWPEehfkkz74et', 'PrusaLink', 'Printer7',
+        'http://172.32.1.97:8080/?action=stream', true, 'Prusa XL 1 head', now());
