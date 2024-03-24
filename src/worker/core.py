@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from asyncio import Task
+from asyncio import Queue, Task
 from collections.abc import Awaitable, Callable
 from datetime import datetime
 from enum import StrEnum
@@ -11,16 +11,47 @@ from typing import NamedTuple
 from aiohttp import ClientConnectorError
 from mes_opcua_server.models import Printer as OpcuaPrinter
 from opcuax import OpcuaClient
+from pydantic import HttpUrl
 
-from db import Printer
-from db.core import DatabaseSession
+from db import DatabaseSession, Printer
 from db.models import Order
 from printer import ActualPrinter, PrusaPrinter
 from printer.models import LatestJob, PrinterStatus
 
 
+class Scheduler:
+    def __init__(self, session: DatabaseSession, auto_assign: bool = False):
+        self.ready_workers: Queue[PrinterWorker] = Queue()
+        self._task: Task[None] | None = None
+        self.session: DatabaseSession = session
+        self.auto_assign: bool = auto_assign
+
+    def run(self):
+        self._task = asyncio.create_task(self.loop())
+
+    def stop(self):
+        if self._task:
+            self._task.cancel()
+
+    async def loop(self):
+        while True:
+            worker = await self.ready_workers.get()
+            if self.auto_assign:
+                orders = await self.session.pending_order_ids()
+            else:
+                orders = await self.session.assigned_pending_order_ids(
+                    worker.printer_id
+                )
+
+            if len(orders) == 0:
+                continue
+
+            order_id = orders[0]
+            worker.pending_orders.put_nowait(order_id)
+
+
 class WorkerState(StrEnum):
-    Unsync = "Unsync"
+    Unknown = "Unknown"
     Ready = "ready"
     Printing = "printing"
     Paused = "paused"
@@ -61,7 +92,7 @@ class PrinterWorker:
         opcua_printer: OpcuaPrinter,
         model: Printer,
         opcua_client: OpcuaClient,
-        pending_order_ids: asyncio.Queue[int],
+        scheduler: Scheduler,
         interval: float = 1,
     ) -> None:
         self.session = session
@@ -71,7 +102,7 @@ class PrinterWorker:
             model=model,
             opcua_name=opcua_name,
         )
-        self.state: WorkerState = WorkerState.Unsync
+        self.state: WorkerState = WorkerState.Unknown
         self.current_order: Order | None = None
         self.printer_id: int = printer_id
         self.opcua_client: OpcuaClient = opcua_client
@@ -81,7 +112,8 @@ class PrinterWorker:
 
         self._event_queue: asyncio.Queue[WorkerEvent] = asyncio.Queue()
 
-        self.pending_orders = pending_order_ids
+        self.pending_orders: asyncio.Queue[int] = asyncio.Queue[int]()
+        self.scheduler: Scheduler = scheduler
 
         self.interval = interval
         self._stop: bool = False
@@ -112,7 +144,7 @@ class PrinterWorker:
                 try:
                     await self.step()
                 except ClientConnectorError:
-                    self.state = WorkerState.Unsync
+                    self.state = WorkerState.Unknown
                 except Exception as e:
                     self.logger.exception(e)
                 await asyncio.sleep(self.interval)
@@ -136,8 +168,8 @@ class PrinterWorker:
     async def handle_state(self, stat: PrinterStatus) -> None:
         self.logger.info(stat.model_dump())
         match self.state:
-            case WorkerState.Unsync:
-                await self.when_unsync(stat)
+            case WorkerState.Unknown:
+                await self.when_unknown(stat)
             case WorkerState.Ready:
                 await self.when_ready()
             case WorkerState.Printing:
@@ -153,7 +185,7 @@ class PrinterWorker:
     def cancel_job(self) -> None:
         self._event_queue.put_nowait(WorkerEvent.Cancel)
 
-    async def when_unsync(self, stat: PrinterStatus) -> None:
+    async def when_unknown(self, stat: PrinterStatus) -> None:
         order = await self.session.current_order(self.printer_id)
         self.current_order = order
 
@@ -183,12 +215,17 @@ class PrinterWorker:
                         await self.on_picked()
 
     async def when_ready(self) -> None:
+        self.scheduler.ready_workers.put_nowait(self)
+
         if self.pending_orders.empty():
             self.logger.debug("no pending orders")
             return
 
         order_id = self.pending_orders.get_nowait()
-        order: Order = await self.session.get(Order, order_id)
+        order: Order | None = await self.session.get(Order, order_id)
+
+        if not order:
+            return
 
         self.logger.info("new job for order %d", order.id)
 
@@ -223,7 +260,7 @@ class PrinterWorker:
         await self.session.picked(self.current_order)
         self.session.expire(self.current_order)
 
-        self.state = WorkerState.Unsync
+        self.state = WorkerState.Unknown
         self.current_order = None
 
     async def on_cancelled(self) -> None:
@@ -261,29 +298,30 @@ class PrinterWorker:
             job=job,
         )
 
-        self.printer.opcua.url = self.printer.actual.url
+        self.printer.opcua.url = HttpUrl(self.printer.actual.url)
         self.printer.opcua.update_time = datetime.now()
         self.printer.opcua.state = stat.state
         self.printer.opcua.bed.target = bed.target
         self.printer.opcua.bed.actual = bed.actual
         self.printer.opcua.nozzle.target = nozzle.target
         self.printer.opcua.nozzle.actual = nozzle.actual
-        self.printer.opcua.camera_url = camera_url
+        self.printer.opcua.camera_url = HttpUrl(camera_url)
         self.printer.opcua.model = model
 
         if job is not None:
             self.printer.opcua.job.file = job.file_path
-            self.printer.opcua.job.progress = job.progress
-            self.printer.opcua.job.time_used = job.time_used
-            self.printer.opcua.job.time_left = job.time_left
-            self.printer.opcua.job.time_left_approx = job.time_approx or 9999
+            self.printer.opcua.job.progress = job.progress or 0
+            self.printer.opcua.job.time_used = job.time_used or 0
+            self.printer.opcua.job.time_left = job.time_left or 0
+            self.printer.opcua.job.time_left_approx = job.time_approx or 0
 
         await self.opcua_client.commit()
 
     async def previewed_model(self) -> bytes | None:
         if (
             not isinstance(self.printer.actual, PrusaPrinter)
-            or self._latest_state.job.previewed_model_url is None
+            or not self._latest_state
+            or not self._latest_state.job.previewed_model_url
         ):
             return None
 

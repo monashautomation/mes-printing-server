@@ -24,6 +24,7 @@ class OrderId(TypedDict):
 @router.post("")
 async def submit_order(
     user_id: Annotated[str, Form(title="user id", examples=["google|3fse56a2"])],
+    printer_id: Annotated[int | None, Form(title="printer id", default=None)],
     file: Annotated[UploadFile, File(title="GCode file")],
 ) -> OrderId:
     filename = file.filename or "unknown"
@@ -47,6 +48,7 @@ async def submit_order(
 
         order = Order(
             user_id=user_id,
+            printer_id=printer_id,
             original_filename=filename,
             gcode_file_path=str(file_path.absolute()),
         )

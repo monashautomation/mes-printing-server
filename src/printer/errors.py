@@ -1,18 +1,22 @@
-class Unauthorized(Exception):
+class PrinterError(Exception):
     ...
 
 
-class FileInUse(ValueError):
+class Unauthorized(PrinterError):
     ...
 
 
-class FileAlreadyExists(ValueError):
+class FileInUse(PrinterError):
     ...
 
 
-class NotFound(ValueError):
+class FileAlreadyExists(PrinterError):
     ...
 
 
-class PrinterIsBusy(ValueError):
+class NotFound(PrinterError):
+    ...
+
+
+class PrinterIsBusy(PrinterError):
     ...

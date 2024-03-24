@@ -9,7 +9,7 @@ from app.routers import orders, printer, printers
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     async with ctx:
         await ctx.start_printer_workers()
         yield

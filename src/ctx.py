@@ -1,6 +1,3 @@
-import asyncio
-from collections import deque
-from collections.abc import AsyncGenerator
 from pathlib import Path
 from types import TracebackType
 
@@ -10,18 +7,18 @@ from opcuax import OpcuaClient
 from opcuax.model import TBaseModel, TOpcuaModel
 from pydantic_core import Url
 
-from db import Database, DatabaseSession
+from db import Database
 from db.models import Printer
 from printer import ActualPrinter, MockPrinter, OctoPrinter, PrinterApi, PrusaPrinter
 from setting import AppSettings, EnvAppSettings
-from worker import PrinterWorker
+from worker import PrinterWorker, Scheduler
 
 
 class MockOpcuaClient(OpcuaClient):
-    def refresh(self, model: TBaseModel) -> None:
-        pass
+    async def refresh(self, model: TBaseModel) -> None:
+        return
 
-    def update(self, name: str, model: TOpcuaModel) -> TOpcuaModel:
+    async def update(self, name: str, model: TOpcuaModel) -> TOpcuaModel:
         return model
 
     async def commit(self) -> None:
@@ -47,39 +44,6 @@ def _opcua_client(url: Url, namespace: str) -> OpcuaClient:
         return OpcuaClient(str(url), namespace)
 
 
-async def _pending_order_id_generator(
-    session: DatabaseSession,
-) -> AsyncGenerator[int | None, None]:
-    order_ids = deque()
-
-    while True:
-        if len(order_ids) == 0:
-            order_ids += await session.pending_order_ids()
-
-        if len(order_ids) > 0:
-            yield order_ids.popleft()
-        else:
-            yield None
-
-
-class FifoOrderFetcher:
-    session: DatabaseSession
-    queue: asyncio.Queue[int]
-    interval: float
-
-    def __init__(self, session: DatabaseSession, interval: float) -> None:
-        self.session = session
-        self.queue = asyncio.Queue()
-        self.interval = interval
-
-    async def work(self):
-        while True:
-            if self.queue.empty():
-                for order_id in await self.session.pending_order_ids():
-                    self.queue.put_nowait(order_id)
-            await asyncio.sleep(self.interval)
-
-
 class AppContext:
     settings: AppSettings
     database: Database
@@ -87,8 +51,7 @@ class AppContext:
     opcua_client: OpcuaClient
     http_session: ClientSession
     workers: dict[int, PrinterWorker]
-    order_fetcher: FifoOrderFetcher
-    __order_fetch_task: asyncio.Task
+    scheduler: Scheduler
 
     def __init__(self, settings: AppSettings) -> None:
         self.settings = settings
@@ -98,8 +61,8 @@ class AppContext:
             settings.opcua_server_url, settings.opcua_server_namespace
         )
         self.workers = {}
-        self.order_fetcher = FifoOrderFetcher(
-            self.database.new_session(), settings.order_fetcher_interval
+        self.scheduler = Scheduler(
+            session=self.database.new_session(), auto_assign=settings.auto_schedule
         )
 
     @staticmethod
@@ -145,7 +108,7 @@ class AppContext:
             actual_printer=actual_printer,
             interval=self.settings.printer_worker_interval,
             opcua_client=self.opcua_client,
-            pending_order_ids=self.order_fetcher.queue,
+            scheduler=self.scheduler,
         )
         assert printer.id is not None
 
@@ -174,7 +137,7 @@ class AppContext:
         self.http_session = ClientSession()
         await self.opcua_client.__aenter__()
         await self.database.create_db_and_tables()
-        self.__order_fetch_task = asyncio.create_task(self.order_fetcher.work())
+        self.scheduler.run()
         return self
 
     async def __aexit__(
@@ -183,11 +146,11 @@ class AppContext:
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
+        await self.scheduler.session.close()
+        self.scheduler.stop()
         await self.opcua_client.__aexit__(exc_type, exc_val, exc_tb)
         await self.http_session.close()
-        await self.order_fetcher.session.close()
         await self.database.close()
-        self.__order_fetch_task.cancel()
 
         for worker in self.workers.values():
             worker.stop()

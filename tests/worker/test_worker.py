@@ -7,15 +7,16 @@ from worker import PrinterWorker
 from worker.core import WorkerState
 
 
-async def test_unsync_to_ready(worker1: PrinterWorker):
+async def test_unknown_to_ready(worker1: PrinterWorker):
     await worker1.step()
 
     assert worker1.state == WorkerState.Ready
 
 
 async def test_start_job(worker1: PrinterWorker):
-    await asyncio.sleep(0.2)  # wait order fetcher to fetch orders
-    await worker1.step()
+    await worker1.step()  # unknown -> ready
+    await worker1.step()  # notify scheduler
+    await asyncio.sleep(0.3)  # wait scheduler to fetch orders
     await worker1.step()
 
     assert worker1.state == WorkerState.Printing
@@ -41,11 +42,13 @@ async def test_pickup(worker1: PrinterWorker):
     worker1.pickup_finished()
     await worker1.step()
 
-    assert worker1.state == WorkerState.Unsync
+    assert worker1.state == WorkerState.Unknown
 
 
 async def test_cancel_when_printing(worker1: PrinterWorker):
-    await asyncio.sleep(0.2)  # wait order fetcher to fetch orders
+    await worker1.step()  # unknown -> ready
+    await worker1.step()  # notify scheduler
+    await asyncio.sleep(0.3)  # wait scheduler to fetch orders
 
     printer = worker1.printer.actual
     assert isinstance(printer, MockPrinter)

@@ -30,6 +30,7 @@ class AppSettings(BaseSettings):
     upload_path: NewPath | DirectoryPath = Path("/var/lib/mes/gcode-files")
     printer_worker_interval: PositiveFloat = 1
     order_fetcher_interval: PositiveFloat = 5
+    auto_schedule: bool = True
     mock_printer_interval: PositiveFloat = 2
     mock_printer_job_time: PositiveInt = 30
     mock_printer_target_bed_temperature: PositiveInt = 100

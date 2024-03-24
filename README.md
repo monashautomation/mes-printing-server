@@ -98,6 +98,7 @@ poetry run setting
 
 ### Optional config
 
+* `AUTO_SCHEDULE`: if set to `true`, the schedule will assign pending jobs to ready printers
 * `PRINTER_WORKER_INTERVAL`: if set to `x`, all printer workers will run every `x` seconds
 * `ORDER_FETCHER_INTERVAL`: if set to `x`, the printer server will fetch pending orders every `x` seconds
 * `MOCK_PRINTER_INTERVAL`: if set to `x`, all mock printers will update inner states every `x` seconds

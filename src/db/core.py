@@ -61,6 +61,21 @@ class DatabaseSession(AsyncSession):
         result = await self.exec(stmt)
         return result.all()
 
+    async def assigned_pending_order_ids(self, printer_id: int) -> Sequence[int]:
+        stmt = (
+            select(Order.id)
+            .where(
+                Order.approved,
+                not_(Order.cancelled),
+                Order.job_status == JobStatus.Pending,
+                Order.printer_id == printer_id,
+            )
+            .order_by(col(Order.create_time).asc())
+        )
+
+        result = await self.exec(stmt)
+        return result.all()
+
     async def approve_order(self, order: Order) -> None:
         order.approved = True
         await self.upsert(order)
