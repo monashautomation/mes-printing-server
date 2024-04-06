@@ -3,8 +3,8 @@
 ## API Version
 
 ```shell
-curl  'http://172.32.1.181/api/version' \
- -H "X-Api-Key: CDHZEoLJzjCY9tx"
+curl  'http://172.32.1.123/api/version' \
+ -H "X-Api-Key: w9d5PVd7FN6mC3o"
 ```
 
 ```json
@@ -23,8 +23,8 @@ curl  'http://172.32.1.181/api/version' \
 ## Printer Status
 
 ```shell
-curl  'http://172.32.1.181/api/v1/status' \
- -H "X-Api-Key: CDHZEoLJzjCY9tx"
+curl  'http://172.32.1.123/api/v1/status' \
+ -H "X-Api-Key: w9d5PVd7FN6mC3o"
 ```
 
 ### Idle
@@ -154,8 +154,22 @@ curl  'http://172.32.1.181/api/v1/status' \
 ## Latest Job
 
 ```shell
-curl  'http://172.32.1.181/api/v1/job' \
- -H "X-Api-Key: CDHZEoLJzjCY9tx"
+curl  'http://172.32.1.123/api/v1/job' \
+ -H "X-Api-Key: w9d5PVd7FN6mC3o"
+```
+
+Download Preview Image
+
+```shell
+curl  -O 'http://172.32.1.123/thumb/s/usb/ASSEM1~1.BGC' \
+  -H "X-Api-Key: w9d5PVd7FN6mC3o"
+```
+
+Download Gcode
+
+```shell
+curl  -O 'http://172.32.1.123/usb/P3_GOL~1.BGC' \
+  -H "X-Api-Key: w9d5PVd7FN6mC3o"
 ```
 
 ```json
@@ -206,14 +220,14 @@ curl  'http://172.32.1.181/api/v1/job' \
 
 ```shell
 curl -X HEAD 'http://172.32.1.181/api/v1/files/usb/A.gcode' \
---header 'X-Api-Key: CDHZEoLJzjCY9tx'
+--header 'X-Api-Key: w9d5PVd7FN6mC3o'
 ```
 
 ## Upload File
 
 ```shell
 curl --location --request PUT 'http://172.32.1.181/api/v1/files/usb/A.gcode' \
---header 'X-Api-Key: CDHZEoLJzjCY9tx' \
+--header 'X-Api-Key: w9d5PVd7FN6mC3o' \
 --header 'Print-After-Upload: 0' \
 --header 'Content-Type: application/octet-stream' \
 --data '@/Users/jichengzhi/Downloads/A.gcode'
@@ -239,12 +253,12 @@ curl --location --request PUT 'http://172.32.1.181/api/v1/files/usb/A.gcode' \
 
 ```shell
 curl -X DELETE 'http://172.32.1.181/api/v1/files/usb/A.gcode' \
---header 'X-Api-Key: CDHZEoLJzjCY9tx' 
+--header 'X-Api-Key: w9d5PVd7FN6mC3o'
 ```
 
 ## Stop Job
 
 ```shell
 curl -X DELETE 'http://172.32.1.181/api/v1/job' \
- -H "X-Api-Key: CDHZEoLJzjCY9tx"
+ -H "X-Api-Key: w9d5PVd7FN6mC3o"
 ```

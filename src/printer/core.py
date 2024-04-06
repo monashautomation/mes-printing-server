@@ -1,10 +1,8 @@
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from types import TracebackType
-from typing import Any, AsyncContextManager
-from urllib.parse import urljoin
 
-from aiohttp import ClientResponse, ClientSession
+from httpx import AsyncClient
 from pydantic import HttpUrl
 
 from printer.models import LatestJob, PrinterStatus
@@ -19,7 +17,7 @@ class PrinterApi(StrEnum):
 class BaseActualPrinter(ABC):
     def __init__(self, url: str | HttpUrl, api_key: str | None = None):
         self.url: str = str(url)
-        self.api_key: str | None = api_key
+        self.api_key: str = api_key or ""
 
     async def setup(self) -> None:
         ...
@@ -71,41 +69,10 @@ class BaseActualPrinter(ABC):
 
 Headers = dict[str, str]
 
+client = AsyncClient()
+
 
 class BaseHttpPrinter(BaseActualPrinter, ABC):
-    session: ClientSession
-
-    def __init__(
-        self, url: str | HttpUrl, session: ClientSession, api_key: str | None = None
-    ) -> None:
+    def __init__(self, url: str | HttpUrl, api_key: str | None = None) -> None:
         super().__init__(url, api_key)
-        self.session = session
-
-    def _request_params(
-        self, endpoint: str, headers: Headers | None = None
-    ) -> dict[str, Any]:
-        h = {"X-Api-Key": self.api_key}
-        if headers is not None:
-            h.update(headers)
-        return {
-            "url": urljoin(self.url, endpoint),
-            "headers": h,
-        }
-
-    def get(self, endpoint: str, **kwargs: Any) -> AsyncContextManager[ClientResponse]:
-        return self.session.get(**self._request_params(endpoint), **kwargs)
-
-    def post(
-        self, endpoint: str, headers: Headers | None = None, **kwargs: Any
-    ) -> AsyncContextManager[ClientResponse]:
-        return self.session.post(**self._request_params(endpoint, headers), **kwargs)
-
-    def put(
-        self, endpoint: str, headers: Headers | None = None, **kwargs: Any
-    ) -> AsyncContextManager[ClientResponse]:
-        return self.session.put(**self._request_params(endpoint, headers), **kwargs)
-
-    def delete(
-        self, endpoint: str, **kwargs: Any
-    ) -> AsyncContextManager[ClientResponse]:
-        return self.session.delete(**self._request_params(endpoint), **kwargs)
+        self.client: AsyncClient = client

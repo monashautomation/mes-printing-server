@@ -3,9 +3,10 @@ from pathlib import Path
 import pytest
 import pytest_asyncio
 
-from ctx import AppContext
-from db.models import Order, Printer, User
+from db import Database, DatabaseSession
+from db.models import Printer
 from printer import PrinterApi
+from service import JobService
 from setting import AppSettings
 
 
@@ -25,74 +26,29 @@ def settings(tmp_path: Path) -> AppSettings:
 
 
 @pytest_asyncio.fixture
-async def context(settings: AppSettings) -> AppContext:
-    async with AppContext(settings) as ctx:
-        yield ctx
+async def sqlite_session() -> DatabaseSession:
+    sqlite = Database(url="sqlite+aiosqlite://")
+    await sqlite.create_tables()
+
+    yield sqlite.new_session()
+
+    await sqlite.close()
+
+
+@pytest_asyncio.fixture
+async def job_service(sqlite_session: DatabaseSession) -> JobService:
+    async with JobService(db=sqlite_session) as service:
+        yield service
 
 
 @pytest.fixture
-def printer1() -> Printer:
+def mock_printer() -> Printer:
     return Printer(
         id=1,
+        url="http://mock.printer1:5000",
+        api_key="key1",
         api=PrinterApi.Mock,
-        url="http://pi1.lab:5000",
-        octo_api_key="p1",
+        has_worker=True,
         opcua_name="Printer1",
-    )
-
-
-@pytest.fixture
-def printers(printer1) -> list[Printer]:
-    return [
-        printer1,
-        Printer(
-            id=2,
-            api=PrinterApi.Mock,
-            url="http://pi2.lab:5000",
-            octo_api_key="p2",
-            opcua_name="Printer2",
-        ),
-        Printer(
-            id=3,
-            api=PrinterApi.Mock,
-            url="http://pi3.lab:5000",
-            octo_api_key="p3",
-            opcua_name="Printer3",
-        ),
-    ]
-
-
-@pytest.fixture
-def admin() -> User:
-    return User(id="auth0|foo", name="foo", permission="admin")
-
-
-@pytest.fixture
-def customer() -> User:
-    return User(id="google|bar", name="bar", permission="user")
-
-
-@pytest.fixture
-def users(admin: User, customer: User) -> list[User]:
-    return [admin, customer]
-
-
-@pytest.fixture
-def admin_new_order(admin) -> Order:
-    return Order(
-        id=1, user_id=admin.id, gcode_file_path="A.gcode", original_filename="A.gcode"
-    )
-
-
-@pytest.fixture
-def admin_approved_order(admin, printer1, settings) -> Order:
-    path = settings.upload_path / "A.gcode"
-    path.touch()
-    return Order(
-        id=2,
-        user_id=admin.id,
-        gcode_file_path=str(path.absolute()),
-        printer_id=printer1.id,
-        approved=True,
-        original_filename="A.gcode",
+        model="Mock Printer",
     )

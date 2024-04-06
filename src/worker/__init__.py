@@ -1,3 +1,3 @@
-__all__ = ["PrinterWorker", "PrinterState", "Scheduler"]
+__all__ = ["PrinterWorker", "LatestPrinterStatus"]
 
-from .core import PrinterState, PrinterWorker, Scheduler
+from .core import LatestPrinterStatus, PrinterWorker

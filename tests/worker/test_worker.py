@@ -1,99 +1,211 @@
-import asyncio
-
-from ctx import AppContext
-from db.models import JobStatus, Order
-from printer import MockPrinter
-from worker import PrinterWorker
-from worker.core import WorkerState
+from db.models import Printer, Job, JobStatus
+from printer.models import PrinterState, LatestJob
+from tests.worker.dummy_printer import DummyPrinter
+from worker import PrinterWorker, LatestPrinterStatus
 
 
-async def test_unknown_to_ready(worker1: PrinterWorker):
-    await worker1.step()
-
-    assert worker1.state == WorkerState.Ready
-
-
-async def test_start_job(worker1: PrinterWorker):
-    await worker1.step()  # unknown -> ready
-    await worker1.step()  # notify scheduler
-    await asyncio.sleep(0.3)  # wait scheduler to fetch orders
-    await worker1.step()
-
-    assert worker1.state == WorkerState.Printing
-
-
-async def test_print_job(worker1: PrinterWorker):
-    for _ in range(50):
-        await worker1.step()
-        await asyncio.sleep(worker1.interval)
-
-    job = await worker1.printer.actual.latest_job()
-    assert job is not None
-    assert worker1.state == WorkerState.WaitPickup
-
-
-async def test_pickup(worker1: PrinterWorker):
-    for _ in range(50):
-        await worker1.step()
-        await asyncio.sleep(worker1.interval)
-
-    assert worker1.state == WorkerState.WaitPickup
-
-    worker1.pickup_finished()
-    await worker1.step()
-
-    assert worker1.state == WorkerState.Unknown
-
-
-async def test_cancel_when_printing(worker1: PrinterWorker):
-    await worker1.step()  # unknown -> ready
-    await worker1.step()  # notify scheduler
-    await asyncio.sleep(0.3)  # wait scheduler to fetch orders
-
-    printer = worker1.printer.actual
-    assert isinstance(printer, MockPrinter)
-    printer.interval = 10
-
-    await worker1.step()
-    await worker1.step()
-
-    worker1.cancel_job()
-    await worker1.step()
-
-    assert worker1.state == WorkerState.Printed
-
-
-async def test_cancel_when_waiting_pickup(worker1: PrinterWorker):
-    for _ in range(50):
-        await worker1.step()
-        await asyncio.sleep(worker1.interval)
-
-    worker1.cancel_job()
-    await worker1.step()
-
-    assert worker1.state == WorkerState.WaitPickup
-
-
-async def test_should_cancel_when_unsync(
-    worker1: PrinterWorker, context: AppContext, admin_approved_order: Order
+async def test_no_job_and_printer_is_ready(
+    printer_worker: PrinterWorker,
+    printer_state: LatestPrinterStatus,
+    dummy_printer: DummyPrinter,
 ):
-    printer = worker1.printer.actual
-    gcode_filename = admin_approved_order.gcode_filename()
+    await printer_worker.handle_status(job=None, stat=printer_state)
+    assert len(dummy_printer.files) == 0
+    assert dummy_printer.current_job_file is None
 
-    assert isinstance(printer, MockPrinter)
-    printer.job_time = 1000
 
-    async with context.database.new_session() as session:
-        order = await session.get(Order, admin_approved_order.id)
-        order.cancelled = True
-        order.job_status = JobStatus.Printing
-        await session.commit()
+async def test_no_job_and_printer_is_printing(
+    printer_worker: PrinterWorker,
+    printer_state: LatestPrinterStatus,
+    dummy_printer: DummyPrinter,
+):
+    printer_state.job = LatestJob(
+        file_path="XYZ.gcode", progress=50, time_used=100, time_left=100
+    )
+    printer_state.state = PrinterState.Printing
 
-    await printer.upload_file(gcode_filename)
-    await printer.start_job(gcode_filename)
+    await printer_worker.handle_status(job=None, stat=printer_state)
 
-    await worker1.step()
-    assert worker1.state == WorkerState.Printing
+    job = await printer_worker.job_service.get_job(printer_filename="XYZ.gcode")
+    assert job is not None
 
-    await worker1.step()
-    assert worker1.state == WorkerState.Printed
+
+async def test_pending_job_and_printer_is_ready(
+    printer_worker: PrinterWorker,
+    printer_state: LatestPrinterStatus,
+    dummy_printer: DummyPrinter,
+    mock_printer: Printer,
+):
+    job = Job(
+        printer_id=mock_printer.id,
+        gcode_file_path="A.gcode",
+        status=JobStatus.ToPrint.value,
+        from_server=True,
+    )
+    await printer_worker.job_service.create_job(job)
+
+    await printer_worker.handle_status(job=job, stat=printer_state)
+
+    assert JobStatus.Printing in job.flag()
+    assert job.gcode_file_path in dummy_printer.files
+    assert dummy_printer.current_job_file == job.gcode_file_path
+
+
+async def test_printing_job_and_printer_is_ready(
+    printer_worker: PrinterWorker,
+    printer_state: LatestPrinterStatus,
+    dummy_printer: DummyPrinter,
+    mock_printer: Printer,
+):
+    job = Job(
+        printer_id=mock_printer.id,
+        gcode_file_path="A.gcode",
+        status=(
+            JobStatus.Printing
+            | JobStatus.Scheduled
+            | JobStatus.Approved
+            | JobStatus.Created
+        ).value,
+        from_server=True,
+    )
+    await printer_worker.job_service.create_job(job)
+
+    dummy_printer.files.add("B.gcode")
+    dummy_printer.current_job_file = "B.gcode"
+
+    await printer_worker.handle_status(job=job, stat=printer_state)
+
+    assert JobStatus.Picked in job.flag()
+    assert {"B.gcode"} == dummy_printer.files
+    assert "B.gcode" == dummy_printer.current_job_file
+
+
+async def test_printing_job_and_printer_is_printing_another_job(
+    printer_worker: PrinterWorker,
+    printer_state: LatestPrinterStatus,
+    dummy_printer: DummyPrinter,
+    mock_printer: Printer,
+):
+    job = Job(
+        printer_id=mock_printer.id,
+        gcode_file_path="A.gcode",
+        status=(
+            JobStatus.Printing
+            | JobStatus.Scheduled
+            | JobStatus.Approved
+            | JobStatus.Created
+        ).value,
+        from_server=True,
+    )
+    await printer_worker.job_service.create_job(job)
+
+    printer_state.state = PrinterState.Printing
+    printer_state.job = LatestJob(
+        file_path="B.gcode", progress=30, time_used=100, time_left=200
+    )
+    dummy_printer.files.add("B.gcode")
+    dummy_printer.current_job_file = "B.gcode"
+
+    await printer_worker.handle_status(job=job, stat=printer_state)
+
+    assert JobStatus.Picked in job.flag()
+    assert {"B.gcode"} == dummy_printer.files
+    assert "B.gcode" == dummy_printer.current_job_file
+
+
+async def test_printed_job(
+    printer_worker: PrinterWorker,
+    printer_state: LatestPrinterStatus,
+    dummy_printer: DummyPrinter,
+    mock_printer: Printer,
+):
+    job = Job(
+        printer_id=mock_printer.id,
+        gcode_file_path="A.gcode",
+        printer_filename="A.gcode",
+        status=(
+            JobStatus.Printing
+            | JobStatus.Scheduled
+            | JobStatus.Approved
+            | JobStatus.Created
+            | JobStatus.Printed
+        ).value,
+        from_server=True,
+    )
+    await printer_worker.job_service.create_job(job)
+
+    printer_state.state = PrinterState.Ready
+    printer_state.job = LatestJob(
+        file_path="A.gcode", progress=100, time_used=100, time_left=0
+    )
+
+    await printer_worker.handle_status(job=job, stat=printer_state)
+
+    assert JobStatus.PickupIssued in job.flag()
+    assert len(dummy_printer.files) == 0
+    assert dummy_printer.current_job_file is None
+
+
+async def test_cancel_job(
+    printer_worker: PrinterWorker,
+    printer_state: LatestPrinterStatus,
+    dummy_printer: DummyPrinter,
+    mock_printer: Printer,
+):
+    job = Job(
+        printer_id=mock_printer.id,
+        gcode_file_path="A.gcode",
+        printer_filename="A.gcode",
+        status=(
+            JobStatus.Printing
+            | JobStatus.Scheduled
+            | JobStatus.Approved
+            | JobStatus.Created
+            | JobStatus.CancelIssued
+        ).value,
+        from_server=True,
+    )
+    await printer_worker.job_service.create_job(job)
+
+    printer_state.state = PrinterState.Printing
+    printer_state.job = LatestJob(
+        file_path="A.gcode", progress=40, time_used=100, time_left=200
+    )
+
+    await printer_worker.handle_status(job=job, stat=printer_state)
+
+    assert JobStatus.Cancelled in job.flag()
+    assert len(dummy_printer.files) == 0
+    assert dummy_printer.current_job_file is None
+
+
+async def test_printing_job_is_printed(
+    printer_worker: PrinterWorker,
+    printer_state: LatestPrinterStatus,
+    dummy_printer: DummyPrinter,
+    mock_printer: Printer,
+):
+    job = Job(
+        printer_id=mock_printer.id,
+        gcode_file_path="A.gcode",
+        printer_filename="A.gcode",
+        status=(
+            JobStatus.Printing
+            | JobStatus.Scheduled
+            | JobStatus.Approved
+            | JobStatus.Created
+        ).value,
+        from_server=True,
+    )
+    await printer_worker.job_service.create_job(job)
+
+    printer_state.state = PrinterState.Ready
+    printer_state.job = LatestJob(
+        file_path="A.gcode", progress=100, time_used=100, time_left=0
+    )
+
+    await printer_worker.handle_status(job=job, stat=printer_state)
+
+    assert JobStatus.Printed in job.flag()
+    assert len(dummy_printer.files) == 0
+    assert dummy_printer.current_job_file is None
