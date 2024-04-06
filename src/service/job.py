@@ -1,8 +1,9 @@
 import secrets
-from pathlib import Path
 from collections.abc import Sequence
+from pathlib import Path
 
 import aiofiles
+from sqlalchemy import true
 from sqlmodel import select, null
 
 from db.models import Job, JobStatus, JobHistory
@@ -54,11 +55,14 @@ class JobService(BaseDbService):
 
     async def unscheduled_jobs(self) -> Sequence[Job]:
         """
-        Get jobs that have been approved but haven't been assigned a printer.
+        Get jobs that is submitted from server, and have been approved
+        but haven't been assigned a printer.
         :return: a list of pending jobs
         """
         stmt = select(Job).where(
-            Job.status == JobStatus.ToSchedule.value, Job.printer_id == null()
+            Job.status == JobStatus.ToSchedule.value,
+            Job.printer_id == null(),
+            Job.from_server == true(),
         )
         result = await self.db.exec(stmt)
         return result.all()
