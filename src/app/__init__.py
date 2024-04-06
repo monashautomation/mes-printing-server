@@ -2,13 +2,14 @@ import logging
 
 import uvicorn
 
-from app.dependencies import ctx
-from app.main import app
+from .main import app
+from setting import app_settings
 
 
 def run() -> None:
     logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-        level=ctx.settings.logging_level,
+        format="[%(asctime)s] %(levelname)-8s [%(name)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        level=app_settings.logging_level,
     )
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False, workers=1)

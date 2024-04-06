@@ -3,16 +3,14 @@ repos:
     rev: v3.15.0
     hooks:
       - id: pyupgrade
-        args: ["--py311-plus"]
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+        args: [ "--py311-plus" ]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.4
     hooks:
-      - id: isort
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 23.12.1
-    hooks:
-      - id: black
-        language_version: python3.11
+      # Run the linter.
+      - id: ruff
+      # Run the formatter.
+      - id: ruff-format
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:

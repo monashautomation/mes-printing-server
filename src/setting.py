@@ -27,7 +27,7 @@ class AppSettings(BaseSettings):
     database_url: AnyUrl = AnyUrl("sqlite+aiosqlite://")
     opcua_server_url: OpcuaUrl = OpcuaUrl("opc.tcp://mock-server:4840")
     opcua_server_namespace: str = "http://monashautomation.com/opcua-server"
-    upload_path: NewPath | DirectoryPath = Path("/var/lib/mes/gcode-files")
+    upload_path: NewPath | DirectoryPath = Path("./upload")
     printer_worker_interval: PositiveFloat = 1
     order_fetcher_interval: PositiveFloat = 5
     auto_schedule: bool = True
@@ -42,6 +42,9 @@ class EnvAppSettings(AppSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
+
+
+app_settings: AppSettings = EnvAppSettings()
 
 
 def display() -> None:

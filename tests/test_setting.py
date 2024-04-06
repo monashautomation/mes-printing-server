@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from setting import AppSettings, EnvAppSettings
+from setting import AppSettings, EnvAppSettings, app_settings
 
 
 @pytest.fixture
@@ -20,9 +20,19 @@ def set_env(settings: AppSettings):
     )
 
 
-def test_load_from_env_vars(settings: AppSettings, set_env):
+def test_load_env_app_settings(settings: AppSettings, set_env):
     s = EnvAppSettings()
 
     assert s.database_url == settings.database_url
     assert s.opcua_server_url == settings.opcua_server_url
     assert s.upload_path == settings.upload_path
+
+
+def test_app_settings_is_set() -> None:
+    assert app_settings is not None
+
+
+def test_override_app_settings() -> None:
+    db_url = "sqlite:///test.db"
+    app_settings.database_url = db_url
+    assert str(app_settings.database_url) == db_url

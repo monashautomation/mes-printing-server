@@ -43,7 +43,7 @@ class PrinterStatus(BaseModel):
     state: PrinterState
     temp_bed: Temperature
     temp_nozzle: Temperature
-    job: LatestJob | None
+    job: LatestJob | None = None
 
     @property
     def heating_finished(self) -> bool:

@@ -8,6 +8,8 @@ readme = "README.md"
 packages = [
     { include = "db", from = "src" },
     { include = "printer", from = "src" },
+    { include = "service", from = "src" },
+    { include = "scheduler", from = "src" },
     { include = "worker", from = "src" },
     { include = "app", from = "src" },
 ]
@@ -29,6 +31,7 @@ pydantic-settings = "^2.1.0"
 python-rapidjson = "^1.14"
 opcuax = { git = "https://github.com/monash-automation/opcuax.git" }
 mes_opcua_server = { git = "https://github.com/monash-automation/mes-opcua-server.git" }
+httpx = "^0.27.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.12.1"

@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from printer.core import BaseHttpPrinter
-from printer.errors import FileInUse, NotFound, PrinterIsBusy
 from printer.models import LatestJob, PrinterState, PrinterStatus, Temperature
 from printer.octo.models import CurrentJob, OctoPrinterStatus, StateFlags
 
@@ -19,89 +18,84 @@ def parse_state(flags: StateFlags) -> PrinterState:
 
 class OctoPrinter(BaseHttpPrinter):
     async def connect(self) -> None:
-        async with self.post("/api/connection", json={"command": "connect"}) as resp:
-            if resp.status == 400:
-                raise ValueError
+        url = self.url + "/api/connection"
+        resp = await self.client.post(
+            url, json={"command": "connect"}, headers={"X-Api-Key": self.api_key}
+        )
+        resp.raise_for_status()
 
     async def current_status(self) -> PrinterStatus:
-        async with self.get("/api/printer") as resp:
-            if resp.status != 200:
-                raise RuntimeError
-            model: OctoPrinterStatus = await resp.json(
-                loads=OctoPrinterStatus.model_validate_json
-            )
+        url = self.url + "/api/printer"
+        resp = await self.client.get(url, headers={"X-Api-Key": self.api_key})
+        resp.raise_for_status()
 
-            assert model.temperature is not None
+        model: OctoPrinterStatus = OctoPrinterStatus.model_validate_json(resp.text)
 
-            bed, noz = model.temperature.bed, model.temperature.tool0
+        assert model.temperature is not None
 
-            assert bed is not None and noz is not None
+        bed, noz = model.temperature.bed, model.temperature.tool0
 
-            job = await self.latest_job()
+        assert bed is not None and noz is not None
 
-            return PrinterStatus(
-                state=parse_state(model.state.flags),
-                temp_bed=Temperature(actual=bed.actual or 0, target=bed.target or 0),
-                temp_nozzle=Temperature(actual=bed.actual or 0, target=bed.target or 0),
-                job=job,
-            )
+        job = await self.latest_job()
+
+        return PrinterStatus(
+            state=parse_state(model.state.flags),
+            temp_bed=Temperature(actual=bed.actual or 0, target=bed.target or 0),
+            temp_nozzle=Temperature(actual=bed.actual or 0, target=bed.target or 0),
+            job=job,
+        )
 
     async def upload_file(self, gcode_path: str) -> None:
-        files = {"file": open(gcode_path, "rb")}
-
-        async with self.post("/api/files/local", data=files) as resp:
-            if resp.status != 201:
-                raise ValueError
+        url = self.url + "/api/files/local"
+        resp = await self.client.post(
+            url,
+            files={"file": open(gcode_path, "rb")},
+            headers={"X-Api-Key": self.api_key},
+        )
+        resp.raise_for_status()
 
     async def delete_file(self, gcode_path: str) -> None:
         filename = Path(gcode_path).name
-        url = f"/api/files/local/{filename}"
+        url = self.url + f"/api/files/local/{filename}"
 
-        async with self.delete(url) as resp:
-            match resp.status:
-                case 204:
-                    return
-                case 404:
-                    raise NotFound
-                case 409:
-                    raise FileInUse
+        resp = await self.client.delete(url, headers={"X-Api-Key": self.api_key})
+        resp.raise_for_status()
 
     async def start_job(self, gcode_path: str) -> None:
         filename = Path(gcode_path).name
-        url = f"/api/files/local/{filename}"
+        url = self.url + f"/api/files/local/{filename}"
 
-        async with self.post(url, json={"command": "select", "print": True}) as resp:
-            match resp.status:
-                case 200 | 202 | 204:
-                    return
-                case 404:
-                    raise NotFound
-                case 409:
-                    raise PrinterIsBusy
+        resp = await self.client.post(
+            url,
+            json={"command": "select", "print": True},
+            headers={"X-Api-Key": self.api_key},
+        )
+        resp.raise_for_status()
 
     async def stop_job(self) -> None:
-        async with self.post("/api/job", json={"command": "cancel"}) as resp:
-            match resp.status:
-                case 204:
-                    return
-                case 409:
-                    raise NotFound
+        url = self.url + "/api/job"
+        resp = await self.client.post(
+            url, json={"command": "cancel"}, headers={"X-Api-Key": self.api_key}
+        )
+        resp.raise_for_status()
 
     async def latest_job(self) -> LatestJob | None:
-        async with self.get("/api/job") as resp:
-            model: CurrentJob = await resp.json(loads=CurrentJob.model_validate_json)
+        url = self.url + "/api/job"
+        resp = await self.client.get(url, headers={"X-Api-Key": self.api_key})
+        resp.raise_for_status()
 
-            file = model.job.file
+        model: CurrentJob = CurrentJob.model_validate_json(resp.text)
 
-            if file is None or file.name is None:
-                return None
+        file = model.job.file
 
-            time_used = model.progress.printTime
+        if file is None or file.name is None:
+            return None
 
-            return LatestJob(
-                file_path=file.name,
-                progress=model.progress.completion,
-                time_used=time_used,
-                time_left=model.progress.printTimeLeft,
-                time_approx=model.job.estimatedPrintTime,
-            )
+        return LatestJob(
+            file_path=file.name,
+            progress=model.progress.completion,
+            time_used=model.progress.printTime,
+            time_left=model.progress.printTimeLeft,
+            time_approx=model.job.estimatedPrintTime,
+        )
