@@ -17,7 +17,6 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.11"
 pydantic = "^2.5.3"
-aiohttp = "^3.9.1"
 SQLAlchemy = "^2.0.23"
 asyncua = "^1.0.6"
 asyncpg = "^0.29.0"

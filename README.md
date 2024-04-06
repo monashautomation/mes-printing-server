@@ -146,34 +146,51 @@ poetry run pytest tests/
 title: Printer Server ERD
 ---
 erDiagram
-    User ||--o{ Order: has
-    Order o|--|| Printer: "is printed by"
-    User {
-        string id PK "will move to Auth0"
-        string name
-        string permission "admin/user"
-        datetime create_time
-    }
-    Printer {
-        int id PK
-        int url
-        string api_key
-        string api "OctoPrint/Prusa/Mock"
-        string opcua_name
-        string model
-        string camera_url
-        datetime create_time
-    }
-    Order {
-        int id PK
-        string user_id FK
-        int printer_id FK
-        string gcode_file_path
-        string job_status
-        bool cancelled
-        bool approved
-        datetime create_time
-    }
+  User ||--o{ Order: has
+  Order o|--o| Job: contains
+  Job o|--|| Printer: "is printed by"
+  Job ||--o{ JobHistory: "records"
+  User {
+    string id PK "Auth0 subject"
+    string email
+    string name
+    string permission "admin/user"
+    datetime create_time
+  }
+  Printer {
+    int id PK
+    string group_name
+    int url
+    string api_key
+    string camera_url
+    string api "OctoPrint/Prusa/Mock"
+    bool has_worker "run printer worker?"
+    string opcua_name
+    string model "e.g. Prusa XL"
+    datetime create_time
+  }
+  Job {
+    int id PK
+    int printer_id FK
+    int order_id FK
+    int user_id FK
+    int status "bitmask"
+    bool from_server "submitted through server?"
+    string gcode_file_path
+    string printer_filename
+    string original_filename
+  }
+  JobHistory {
+    int id PK
+    int job_id FK
+    string status "e.g. approved"
+    datetime create_time
+  }
+  Order {
+    int id PK
+    string user_id FK
+    datetime create_time
+  }
 ```
 
 ## Contribute
