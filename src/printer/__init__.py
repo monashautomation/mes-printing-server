@@ -16,7 +16,7 @@ from .prusa.core import PrusaPrinter
 ActualPrinter = OctoPrinter | PrusaPrinter | MockPrinter
 
 
-def create_printer(api: PrinterApi, url: str, api_key: str) -> ActualPrinter:
+def create_printer(api: PrinterApi, url: str, api_key: str | None) -> ActualPrinter:
     match api:
         case PrinterApi.OctoPrint:
             return OctoPrinter(url=url, api_key=api_key)

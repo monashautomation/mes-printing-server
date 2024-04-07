@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 import aiofiles
-from sqlalchemy import true
+from sqlalchemy import true, ColumnOperators
 from sqlmodel import select, null
 
 from db.models import Job, JobStatus, JobHistory
@@ -101,6 +101,8 @@ class JobService(BaseDbService):
         :param printer_id: printer id
         :return: a Job instance or None
         """
+        assert isinstance(Job.status, ColumnOperators)
+
         stmt = select(Job).where(
             Job.printer_id == printer_id,
             Job.status > JobStatus.Scheduled.value,

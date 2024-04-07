@@ -8,6 +8,10 @@ from printer import PrinterApi
 
 
 class Base(SQLModel):
+    """
+    Common fields of all tables
+    """
+
     create_time: datetime = Field(default_factory=datetime.now)
 
 

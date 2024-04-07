@@ -14,7 +14,10 @@ _logger = logging.getLogger("worker.manager")
 
 async def create_printer_worker(printer: Printer) -> PrinterWorker:
     api = create_printer(api=printer.api, url=printer.url, api_key=printer.api_key)
-    opcua = await opcua_service.get_printer(printer.opcua_name)
+
+    opcua = None
+    if printer.opcua_name is not None:
+        opcua = await opcua_service.get_printer(printer.opcua_name)
 
     return PrinterWorker(printer=printer, opcua_printer=opcua, api=api)
 

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from types import TracebackType
+from typing import Self
 
 from httpx import AsyncClient
 from pydantic import HttpUrl
@@ -53,7 +54,7 @@ class BaseActualPrinter(ABC):
     async def latest_job(self) -> LatestJob | None:
         ...
 
-    async def __aenter__(self) -> "BaseActualPrinter":
+    async def __aenter__(self) -> Self:
         await self.setup()
         await self.connect()
         return self

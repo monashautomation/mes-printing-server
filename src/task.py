@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Self
 
 
 class PeriodicTask:
@@ -28,7 +29,7 @@ class PeriodicTask:
     async def step(self) -> None:
         pass
 
-    async def __aenter__(self) -> "PeriodicTask":
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

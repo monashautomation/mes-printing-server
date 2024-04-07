@@ -1,4 +1,5 @@
 from db import DatabaseSession, session
+from typing import Self
 
 
 class BaseDbService:
@@ -16,7 +17,7 @@ class BaseDbService:
         self.mange_session: bool = db is None
         self.db: DatabaseSession = db or session()
 
-    async def __aenter__(self) -> "BaseDbService":
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

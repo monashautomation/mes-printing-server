@@ -1,3 +1,5 @@
+from typing import Self
+
 from mes_opcua_server.models import Printer as OpcuaPrinter
 from opcuax import OpcuaClient
 from opcuax.model import TBaseModel, TOpcuaModel
@@ -21,7 +23,7 @@ class MockOpcuaClient(OpcuaClient):
     ) -> TOpcuaModel:
         return model_class()
 
-    async def __aenter__(self) -> "MockOpcuaClient":
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
