@@ -153,7 +153,7 @@ and fetch current job status from the printer. By comparing previous and current
 the printer worker knows what happened between these states and
 react according to the state change.
 
-Printer workers are **stateless**, which means it doesn't maintain any internal states.
+Printer worker is **stateless**, which means it doesn't maintain any internal states.
 This prevents data loss if the printing server is down when tracking a printing job,
 and simplifies testing.
 
