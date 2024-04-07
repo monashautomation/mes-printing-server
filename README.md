@@ -125,7 +125,8 @@ curl --location 'http://localhost:8000/api/v1/printers' \
     "url": "http://mock-printer1:5000",
     "api": "Mock",
     "api_key": "FJZ3PO9",
-    "opcua_name": "Printer1"
+    "opcua_name": "Printer1",
+    "worker": true
 }'
 ```
 
@@ -139,6 +140,25 @@ You can specify `sqlite+aiosqlite:///` as the database URL to tell the server to
 poetry run pytest tests/
 ```
 
+## Printer Worker
+
+A printer worker periodically fetches current status of a printer and
+acts call printer APIs to control printing jobs.
+Printer worker monitors states of **all** printing jobs
+(submitted through both server and printer), but only controls
+jobs (print/cancel) submitted though server.
+
+As the diagram shown below, the printer worker queries the previous job status from database,
+and fetch current job status from the printer. By comparing previous and current status,
+the printer worker knows what happened between these states and
+react according to the state change.
+
+Printer workers are **stateless**, which means it doesn't maintain any internal states.
+This prevents data loss if the printing server is down when tracking a printing job,
+and simplifies testing.
+
+![img.png](docs/printer-worker.png)
+
 ## ERD
 
 ```mermaid
@@ -146,62 +166,66 @@ poetry run pytest tests/
 title: Printer Server ERD
 ---
 erDiagram
-  User ||--o{ Order: has
-  Order o|--o| Job: contains
-  Job o|--|| Printer: "is printed by"
-  Job ||--o{ JobHistory: "records"
-  User {
-    string id PK "Auth0 subject"
-    string email
-    string name
-    string permission "admin/user"
-    datetime create_time
-  }
-  Printer {
-    int id PK
-    string group_name
-    int url
-    string api_key
-    string camera_url
-    string api "OctoPrint/Prusa/Mock"
-    bool has_worker "run printer worker?"
-    string opcua_name
-    string model "e.g. Prusa XL"
-    datetime create_time
-  }
-  Job {
-    int id PK
-    int printer_id FK
-    int order_id FK
-    int user_id FK
-    int status "bitmask"
-    bool from_server "submitted through server?"
-    string gcode_file_path
-    string printer_filename
-    string original_filename
-  }
-  JobHistory {
-    int id PK
-    int job_id FK
-    string status "e.g. approved"
-    datetime create_time
-  }
-  Order {
-    int id PK
-    string user_id FK
-    datetime create_time
-  }
+    User ||--o{ Order: has
+    Order o|--o| Job: contains
+    Job o|--|| Printer: "is printed by"
+    Job ||--o{ JobHistory: "records"
+    User {
+        string id PK "Auth0 subject"
+        string email
+        string name
+        string permission "admin/user"
+        datetime create_time
+    }
+    Printer {
+        int id PK
+        string group_name
+        int url
+        string api_key
+        string camera_url
+        string api "OctoPrint/Prusa/Mock"
+        bool has_worker "run printer worker?"
+        string opcua_name
+        string model "e.g. Prusa XL"
+        datetime create_time
+    }
+    Job {
+        int id PK
+        int printer_id FK
+        int order_id FK
+        int user_id FK
+        int status "bitmask"
+        bool from_server "submitted through server?"
+        string gcode_file_path
+        string printer_filename
+        string original_filename
+    }
+    JobHistory {
+        int id PK
+        int job_id FK
+        string status "e.g. approved"
+        datetime create_time
+    }
+    Order {
+        int id PK
+        string user_id FK
+        datetime create_time
+    }
 ```
 
 ## Contribute
 
+* Fork
 * Install pre-commit hooks
 
   ```shell
   pre-commit install
   ```
 
-* Code and add unit tests
+* Write codd and unit tests
+  ```shell
+  pytest tests/
+  ```
 
 * run static typing checks
 
@@ -209,7 +233,7 @@ erDiagram
   mypy
   ```
 
-* Submit a pull request
+* Push to your repo and Submit a pull request
 
 ## Resources
 
