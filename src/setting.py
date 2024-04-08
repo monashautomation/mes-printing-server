@@ -28,7 +28,7 @@ class AppSettings(BaseSettings):
     opcua_server_url: OpcuaUrl = OpcuaUrl("opc.tcp://mock-server:4840")
     opcua_server_namespace: str = "http://monashautomation.com/opcua-server"
     upload_path: NewPath | DirectoryPath = Path("./upload")
-    printer_worker_interval: PositiveFloat = 1
+    printer_worker_interval: PositiveFloat = 5
     order_fetcher_interval: PositiveFloat = 5
     auto_schedule: bool = True
     mock_printer_interval: PositiveFloat = 2
