@@ -825,7 +825,7 @@ redis = "^5.0.1"
 type = "git"
 url = "https://github.com/monash-automation/mes-opcua-server.git"
 reference = "HEAD"
-resolved_reference = "51de0836f4046992498d40b20816d10c76adf3d0"
+resolved_reference = "d54ac227f6d2320bfb64522a1463670c840c740b"
 
 [[package]]
 name = "multidict"
