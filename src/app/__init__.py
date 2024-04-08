@@ -12,4 +12,5 @@ def run() -> None:
         datefmt="%Y-%m-%d %H:%M:%S",
         level=app_settings.logging_level,
     )
+    logging.getLogger("httpx").setLevel("WARNING")
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False, workers=1)

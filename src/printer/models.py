@@ -60,3 +60,8 @@ class PrinterStatus(BaseModel):
     @property
     def is_error(self) -> bool:
         return self.state == PrinterState.Error
+
+    def job_progress_or_zero(self) -> float:
+        if self.job is None:
+            return 0
+        return self.job.progress or 0

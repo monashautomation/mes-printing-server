@@ -121,11 +121,14 @@ class PrinterWorker(PeriodicTask):
         await self.job_service.update_job_status(job, JobStatus.Printing)
 
     async def when_printing(self, job: Job, stat: LatestPrinterStatus) -> None:
+        self.logger.info(
+            "printing job progress %.2f%% (id=%d)", stat.job_progress_or_zero(), job.id
+        )
         if stat.job is None or stat.job.done:
-            self.logger.info("printing job is printed (id=%d)", job.id)
             await self.job_service.update_job_status(job, JobStatus.Printed)
 
     async def when_printed(self, job: Job) -> None:
+        self.logger.info("printing job is finished (id=%d)", job.id)
         if job.from_server:
             filename = job.gcode_filename()
             assert filename is not None
@@ -138,6 +141,7 @@ class PrinterWorker(PeriodicTask):
 
     async def on_cancel(self, job: Job) -> None:
         if job.is_printing():
+            self.logger.info("cancelling printing job (id=%d)", job.id)
             await self.api.stop_job()
 
         await self.job_service.update_job_status(job, JobStatus.Cancelled)
