@@ -177,10 +177,10 @@ class PrinterWorker(PeriodicTask):
         self.opcua_printer.url = stat.url
         self.opcua_printer.update_time = datetime.now()
         self.opcua_printer.state = stat.state
-        self.opcua_printer.bed.target = max(bed.target, 0)
-        self.opcua_printer.bed.actual = max(bed.actual, 0)
-        self.opcua_printer.nozzle.target = max(nozzle.target, 0)
-        self.opcua_printer.nozzle.actual = max(nozzle.actual, 0)
+        self.opcua_printer.bed.target = bed.target
+        self.opcua_printer.bed.actual = bed.actual
+        self.opcua_printer.nozzle.target = nozzle.target
+        self.opcua_printer.nozzle.actual = nozzle.actual
         self.opcua_printer.camera_url = HttpUrl(stat.camera_url or "http://unknown")
         self.opcua_printer.model = stat.model
 
