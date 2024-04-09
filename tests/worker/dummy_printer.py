@@ -10,6 +10,18 @@ class DummyPrinter(BaseActualPrinter):
         self.files = set()
         self.current_job_file: str | None = None
 
+    def has_no_uploaded_files(self) -> bool:
+        return len(self.files) == 0
+
+    def has_file(self, file: str) -> bool:
+        return file in self.files
+
+    def is_printing_file(self, file: str) -> bool:
+        return self.has_file(file) and self.current_job_file == file
+
+    def is_not_printing(self) -> bool:
+        return self.current_job_file is None
+
     async def connect(self) -> None:
         return
 

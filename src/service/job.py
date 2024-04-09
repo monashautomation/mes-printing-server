@@ -111,17 +111,20 @@ class JobService(BaseDbService):
         result = await self.db.exec(stmt)
         return result.one_or_none()
 
-    async def update_job_status(self, job: Job, status: JobStatus) -> None:
+    async def update_job(
+        self, job: Job, new_stats_flag: JobStatus | None = None
+    ) -> None:
         """
         Update job status and insert a job history record.
         :param job: a Job instance which must be managed by the db session of this service
-        :param status: new job status
+        :param new_stats_flag: new job status that will be added to the bitmask
         """
-        job.status |= status.value
-        self.db.add(job)
+        if new_stats_flag is not None:
+            job.add_status_flag(new_stats_flag)
+            history = JobHistory(job_id=job.id, status=str(new_stats_flag))
+            self.db.add(history)
 
-        history = JobHistory(job_id=job.id, status=str(status))
-        self.db.add(history)
+        self.db.add(job)
 
         await self.db.commit()
 

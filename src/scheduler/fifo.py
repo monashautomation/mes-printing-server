@@ -36,7 +36,7 @@ class FifoScheduler(PeriodicTask):
         self.logger.info("schedule job (id=%d) to printer (id=%d)", job, printer_id)
 
         job.printer_id = printer_id
-        await self.job_service.update_job_status(job, JobStatus.Scheduled)
+        await self.job_service.update_job(job, JobStatus.Scheduled)
 
     @override
     async def step(self) -> None:

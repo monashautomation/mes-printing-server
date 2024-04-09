@@ -102,12 +102,8 @@ class Progress(BaseModel):
         default=None,
         description="Current position in the file being printed, in bytes from the beginning",
     )
-    printTime: int | None = Field(
-        default=None, description="Time already spent printing, in seconds"
-    )
-    printTimeLeft: int | None = Field(
-        default=None, description="Estimate of time left to print, in seconds"
-    )
+    printTime: int = Field(description="Time already spent printing, in seconds")
+    printTimeLeft: int = Field(description="Estimate of time left to print, in seconds")
 
 
 class CurrentJob(BaseModel):

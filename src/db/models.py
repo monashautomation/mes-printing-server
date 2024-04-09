@@ -77,6 +77,10 @@ class Job(IntPK, table=True):
     gcode_file_path: str | None = Field(default=None)
     original_filename: str | None = Field(default=None)
     printer_filename: str | None = Field(default=None)
+    start_time: datetime | None = Field(default=None)
+
+    def add_status_flag(self, status: JobStatus) -> None:
+        self.status |= status.value
 
     def flag(self) -> JobStatus:
         return JobStatus(self.status)

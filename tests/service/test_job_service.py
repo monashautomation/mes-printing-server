@@ -101,5 +101,5 @@ async def test_current_printer_job(job_service: JobService, printing_job: Job) -
 
 
 async def test_approve_job(job_service: JobService, new_job: Job) -> None:
-    await job_service.update_job_status(new_job, JobStatus.Approved)
+    await job_service.update_job(new_job, JobStatus.Approved)
     assert new_job.flag() == JobStatus.Created | JobStatus.Approved

@@ -1,7 +1,7 @@
+from collections.abc import Sequence
 from http import HTTPStatus
 from pathlib import Path
 from typing import Annotated
-from collections.abc import Sequence
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -57,11 +57,14 @@ async def submit_job(
 async def approve_order(job_id: int) -> None:
     async with JobService() as service:
         job = await service.get_job(job_id)
-        await service.update_job_status(job, JobStatus.Approved)
+        await service.update_job(job, JobStatus.Approved)
 
 
 @router.put("/{job_id}:cancel", status_code=HTTPStatus.ACCEPTED)
 async def cancel_order(job_id: int) -> None:
     async with JobService() as service:
         job = await service.get_job(job_id)
-        await service.update_job_status(job, JobStatus.CancelIssued)
+        await service.update_job(job, JobStatus.CancelIssued)
+
+
+# TODO: pickup job, validate by job status(cancelled or printed)

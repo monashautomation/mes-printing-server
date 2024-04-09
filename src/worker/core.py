@@ -20,6 +20,19 @@ class LatestPrinterStatus(PrinterStatus):
     camera_url: str | None
 
 
+def is_same_job(prev: Job, cur: LatestJob) -> bool:
+    if prev.start_time is None:
+        return False
+
+    if cur.start_time < prev.start_time:  # time has slight diff on ms
+        dt = prev.start_time - cur.start_time
+    else:
+        dt = cur.start_time - prev.start_time
+
+    secs = dt.seconds
+    return prev.printer_filename == cur.file_path and secs <= 10
+
+
 class PrinterWorker(PeriodicTask):
     def __init__(
         self,
@@ -68,17 +81,17 @@ class PrinterWorker(PeriodicTask):
             )
 
     async def handle_status(self, job: Job | None, stat: LatestPrinterStatus) -> None:
+        if stat.is_error:
+            self.logger.error("printer has an error, try again in next iteration")
+            return
+
         match job, stat:
             case None, PrinterStatus(is_ready=True):
                 self.logger.debug("printer is ready and no job is available")
             case None, PrinterStatus(is_printing=True):
                 self.logger.info("persisting new job submitted through printer")
                 await self._new_job(stat)
-            case _, PrinterStatus(is_error=True):
-                self.logger.error("printer has error, try again in next iteration")
-            case Job(printer_filename=job_file) as job, PrinterStatus(
-                job=LatestJob(file_path=printer_file)
-            ) if job_file == printer_file:  # job is current job on printer
+            case Job() as job, PrinterStatus() as stat if is_same_job(job, stat.job):
                 if job.need_pickup():
                     await self.require_pickup(job)
                 elif job.need_cancel():
@@ -86,13 +99,14 @@ class PrinterWorker(PeriodicTask):
                 elif job.is_printing():
                     await self.when_printing(job, stat)
                 # do nothing if job is already printed
-            case Job() as job, _:
-                if job.is_pending() and stat.is_ready:
+            case Job() as job, _ as printer:
+                if job.is_pending() and printer.is_ready:
                     await self.when_ready(job)
                 else:
-                    # printer is doing another job / job is not the previous finished one
+                    # printer is doing another job
                     self.logger.info(
-                        "mark job (id=%d) as picked, printer job=%s", job.id, stat.job
+                        "finish prev job since printer is doing another job %s",
+                        printer.job,
                     )
                     await self.on_pick(job)
             case _, _:
@@ -106,6 +120,7 @@ class PrinterWorker(PeriodicTask):
             from_server=False,
             status=(JobStatus.Printing | JobStatus.Scheduled).value,
             printer_filename=stat.job.file_path,
+            start_time=stat.job.start_time,
         )
         await self.job_service.create_job(job)
 
@@ -114,18 +129,20 @@ class PrinterWorker(PeriodicTask):
             return
         assert job.gcode_file_path is not None
 
-        self.logger.info("start printing job (id=%d)", job.id)
+        self.logger.info("start printing job (id=%d) from server", job.id)
 
         await self.api.upload_file(job.gcode_file_path)
         await self.api.start_job(job.gcode_file_path)
-        await self.job_service.update_job_status(job, JobStatus.Printing)
+
+        job.start_time = datetime.now()
+        await self.job_service.update_job(job, JobStatus.Printing)
 
     async def when_printing(self, job: Job, stat: LatestPrinterStatus) -> None:
         self.logger.info(
             "printing job progress %.2f%% (id=%d)", stat.job_progress_or_zero(), job.id
         )
         if stat.job is None or stat.job.done:
-            await self.job_service.update_job_status(job, JobStatus.Printed)
+            await self.job_service.update_job(job, JobStatus.Printed)
 
     async def when_printed(self, job: Job) -> None:
         self.logger.info("printing job is finished (id=%d)", job.id)
@@ -137,18 +154,19 @@ class PrinterWorker(PeriodicTask):
         await self.require_pickup(job)
 
     async def on_pick(self, job: Job) -> None:
-        await self.job_service.update_job_status(job, JobStatus.Picked)
+        self.logger.info("mark job as picked (id=%d)", job.id)
+        await self.job_service.update_job(job, JobStatus.Picked)
 
     async def on_cancel(self, job: Job) -> None:
         if job.is_printing():
             self.logger.info("cancelling printing job (id=%d)", job.id)
             await self.api.stop_job()
 
-        await self.job_service.update_job_status(job, JobStatus.Cancelled)
+        await self.job_service.update_job(job, JobStatus.Cancelled)
 
     async def require_pickup(self, job: Job) -> None:
         self.logger.warning("simulate sending pickup request to robots")
-        await self.job_service.update_job_status(job, JobStatus.PickupIssued)
+        await self.job_service.update_job(job, JobStatus.PickupIssued)
 
     async def printer_status(self) -> LatestPrinterStatus | None:
         delta = datetime.now() - self._cache_update_time

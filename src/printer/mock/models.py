@@ -18,7 +18,7 @@ class _Job(BaseModel):
         return self.time_used / self.time_estimated * 100
 
     @property
-    def time_left(self) -> float:
+    def time_left(self) -> int:
         return self.time_estimated - self.time_used
 
 

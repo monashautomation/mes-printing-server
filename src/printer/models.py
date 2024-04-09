@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from enum import StrEnum
 
 from pydantic import BaseModel
@@ -24,13 +25,17 @@ class LatestJob(BaseModel):
     previewed_model_url: str | None = None
     # TODO remove None
     progress: float | None
-    time_used: float | None
-    time_left: float | None
+    time_used: int  # seconds
+    time_left: int
     time_approx: float | None = None
 
     @property
     def done(self) -> bool:
         return self.progress is not None and self.progress == 100
+
+    @property
+    def start_time(self) -> datetime:
+        return datetime.now() - timedelta(seconds=self.time_used)
 
 
 class PrinterState(StrEnum):

@@ -43,4 +43,4 @@ class CurrentJob(BaseModel):
     progress: float | None = None
     file: File | None = None
     time_printing: int
-    time_remaining: int | None = None
+    time_remaining: int
