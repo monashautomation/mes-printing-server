@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import jobs, printers
+from .routers import filament, jobs, printers
 from db import database
 from service import PrinterService, opcua_service
 from worker.manager import start_new_printer_worker
@@ -34,6 +34,7 @@ app = FastAPI(
 root_router = APIRouter(prefix="/api/v1")
 root_router.include_router(printers.router)
 root_router.include_router(jobs.router)
+root_router.include_router(filament.router)
 
 app.include_router(root_router)
 

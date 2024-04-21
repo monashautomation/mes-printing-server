@@ -117,3 +117,30 @@ class Job(IntPK, table=True):
 class JobHistory(IntPK, table=True):
     job_id: int = Field(foreign_key="job.id")
     status: str
+
+
+class Filament(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
+    supplier: str = Field(description="Supplier")
+    material: str = Field(description="Material type")
+    color: str = Field(description="Filament color")
+    net_material: float = Field(description="Net material")
+    barcode: str = Field(description="Barcode")
+    allocated_to: str = Field(description="allocation")
+    opened_by: str = Field(description="Who opened the filament")
+    opened_on: datetime = Field(description="Opened timestamp")
+    weight: float = Field(description="Total weight including spool")
+    filament_left: float = Field(default=0, description="Remaining filament")
+    filament_waste: float = Field(default=0, description="Wasted filament")
+    # transactions: list['FilamentTransaction'] = Relationship(back_populates="filament")  # Define the relationship
+
+
+
+class FilamentTransaction(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
+    filament_id: int = Field(foreign_key="filament.id", default=None)
+    printer_id: int = Field(foreign_key="printer.id", default=None)
+    user_id: str = Field(foreign_key="user.id", default=None)
+    action: str = Field(description="Load/Unload")
+    timestamp: datetime = Field(description="Transaction time")
+    # filament: Filament = Relationship(back_populates="filament_transaction")
