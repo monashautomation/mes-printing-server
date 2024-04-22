@@ -132,15 +132,3 @@ class Filament(SQLModel, table=True):
     weight: float = Field(description="Total weight including spool")
     filament_left: float = Field(default=0, description="Remaining filament")
     filament_waste: float = Field(default=0, description="Wasted filament")
-    # transactions: list['FilamentTransaction'] = Relationship(back_populates="filament")  # Define the relationship
-
-
-
-class FilamentTransaction(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    filament_id: int = Field(foreign_key="filament.id", default=None)
-    printer_id: int = Field(foreign_key="printer.id", default=None)
-    user_id: str = Field(foreign_key="user.id", default=None)
-    action: str = Field(description="Load/Unload")
-    timestamp: datetime = Field(description="Transaction time")
-    # filament: Filament = Relationship(back_populates="filament_transaction")
