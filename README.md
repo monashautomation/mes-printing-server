@@ -213,28 +213,6 @@ erDiagram
     }
 ```
 
-## Contribute
-
-* Fork
-* Install pre-commit hooks
-
-  ```shell
-  pre-commit install
-  ```
-
-* Write codd and unit tests
-  ```shell
-  pytest tests/
-  ```
-
-* run static typing checks
-
-  ```shell
-  mypy
-  ```
-
-* Push to your repo and Submit a pull request
-
 ## Resources
 
 * Prusa Web Link
