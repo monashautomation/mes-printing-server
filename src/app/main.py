@@ -4,10 +4,10 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import jobs, printers
 from db import database
 from service import PrinterService, opcua_service
 from worker.manager import start_new_printer_worker
+from .routers import jobs, printers
 
 
 @asynccontextmanager
