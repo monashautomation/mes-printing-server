@@ -57,9 +57,7 @@ class HttpPrinterService(PrinterService):
 
         return StreamingResponse(
             content=resp.aiter_bytes(),
-            headers={
-                "Content-Type": "multipart/x-mixed-replace;boundary=boundarydonotcross"
-            },
+            headers=resp.headers,
             background=BackgroundTask(resp.aclose),
         )
 
