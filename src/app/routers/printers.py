@@ -1,8 +1,11 @@
 from collections.abc import Sequence
 from http import HTTPStatus
 
+import httpx
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, HttpUrl
+from starlette.background import BackgroundTask
 from starlette.responses import RedirectResponse
 
 from db.models import Printer
@@ -11,6 +14,8 @@ from service import PrinterService
 from worker import LatestPrinterStatus, manager
 
 router = APIRouter(prefix="/printers", tags=["printers"])
+
+_client = httpx.AsyncClient()
 
 
 class HttpPrinterService(PrinterService):
@@ -30,6 +35,33 @@ class HttpPrinterService(PrinterService):
             )
 
         return printer
+
+    async def camera_stream(
+        self,
+        printer_id: int | None = None,
+        group_name: str | None = None,
+        opcua_name: str | None = None,
+    ) -> StreamingResponse:
+        printer = await self.get_printer(
+            printer_id=printer_id, group_name=group_name, opcua_name=opcua_name
+        )
+
+        if printer.camera_url is None:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail="printer does not have a camera",
+            )
+
+        req = _client.build_request("GET", printer.camera_url + "/?action=stream")
+        resp = await _client.send(req, stream=True)
+
+        return StreamingResponse(
+            content=resp.aiter_bytes(),
+            headers={
+                "Content-Type": "multipart/x-mixed-replace;boundary=boundarydonotcross"
+            },
+            background=BackgroundTask(resp.aclose),
+        )
 
 
 @router.get("")
@@ -57,6 +89,12 @@ async def get_printer_status_by_id(printer_id: int) -> LatestPrinterStatus | Non
         return await worker.printer_status()
 
 
+@router.get("/{printer_id}/camera")
+async def stream_printer_camera_by_id(printer_id: int) -> StreamingResponse:
+    async with HttpPrinterService() as service:
+        return await service.camera_stream(printer_id=printer_id)
+
+
 @router.get("/opcua/{name}")
 async def get_printer_by_opcua_name(name: str) -> Printer:
     async with HttpPrinterService() as service:
@@ -74,6 +112,12 @@ async def get_printer_status_by_opcua_name(name: str) -> LatestPrinterStatus | N
             return None
 
         return await worker.printer_status()
+
+
+@router.get("/opcua/{name}/camera")
+async def stream_printer_camera_by_opcua_name(name: str) -> StreamingResponse:
+    async with HttpPrinterService() as service:
+        return await service.camera_stream(opcua_name=name)
 
 
 @router.get("/opcua/{name}/preview")
