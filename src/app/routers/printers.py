@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 import httpx
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel, Field, HttpUrl
 from starlette.background import BackgroundTask
 from starlette.responses import RedirectResponse
@@ -36,12 +36,12 @@ class HttpPrinterService(PrinterService):
 
         return printer
 
-    async def camera_stream(
+    async def get_printer_camera_url(
         self,
         printer_id: int | None = None,
         group_name: str | None = None,
         opcua_name: str | None = None,
-    ) -> StreamingResponse:
+    ) -> str:
         printer = await self.get_printer(
             printer_id=printer_id, group_name=group_name, opcua_name=opcua_name
         )
@@ -52,11 +52,42 @@ class HttpPrinterService(PrinterService):
                 detail="printer does not have a camera",
             )
 
-        req = _client.build_request("GET", printer.camera_url + "/?action=stream")
+        return printer.camera_url
+
+    async def camera_stream(
+        self,
+        printer_id: int | None = None,
+        group_name: str | None = None,
+        opcua_name: str | None = None,
+    ) -> StreamingResponse:
+        camera_url = await self.get_printer_camera_url(
+            printer_id=printer_id, group_name=group_name, opcua_name=opcua_name
+        )
+
+        req = _client.build_request("GET", camera_url + "/?action=stream")
         resp = await _client.send(req, stream=True)
 
         return StreamingResponse(
             content=resp.aiter_bytes(),
+            headers=resp.headers,
+            background=BackgroundTask(resp.aclose),
+        )
+
+    async def camera_snapshot(
+        self,
+        printer_id: int | None = None,
+        group_name: str | None = None,
+        opcua_name: str | None = None,
+    ) -> Response:
+        camera_url = await self.get_printer_camera_url(
+            printer_id=printer_id, group_name=group_name, opcua_name=opcua_name
+        )
+
+        req = _client.build_request("GET", camera_url + "/?action=snapshot")
+        resp = await _client.send(req)
+
+        return Response(
+            content=resp.content,
             headers=resp.headers,
             background=BackgroundTask(resp.aclose),
         )
@@ -87,10 +118,16 @@ async def get_printer_status_by_id(printer_id: int) -> LatestPrinterStatus | Non
         return await worker.printer_status()
 
 
-@router.get("/{printer_id}/camera")
-async def stream_printer_camera_by_id(printer_id: int) -> StreamingResponse:
+@router.get("/{printer_id}/camera/stream")
+async def printer_camera_stream_by_id(printer_id: int) -> StreamingResponse:
     async with HttpPrinterService() as service:
         return await service.camera_stream(printer_id=printer_id)
+
+
+@router.get("/{printer_id}/camera/snapshot")
+async def printer_camera_snapshot_by_id(printer_id: int) -> Response:
+    async with HttpPrinterService() as service:
+        return await service.camera_snapshot(printer_id=printer_id)
 
 
 @router.get("/opcua/{name}")
@@ -112,10 +149,16 @@ async def get_printer_status_by_opcua_name(name: str) -> LatestPrinterStatus | N
         return await worker.printer_status()
 
 
-@router.get("/opcua/{name}/camera")
-async def stream_printer_camera_by_opcua_name(name: str) -> StreamingResponse:
+@router.get("/opcua/{name}/camera/stream")
+async def printer_camera_stream_by_opcua_name(name: str) -> StreamingResponse:
     async with HttpPrinterService() as service:
         return await service.camera_stream(opcua_name=name)
+
+
+@router.get("/opcua/{name}/camera/snapshot")
+async def printer_camera_snapshot_by_opcua_name(name: str) -> Response:
+    async with HttpPrinterService() as service:
+        return await service.camera_snapshot(opcua_name=name)
 
 
 @router.get("/opcua/{name}/preview")
