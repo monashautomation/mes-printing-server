@@ -1,9 +1,8 @@
 from datetime import datetime
 from enum import Flag
 from pathlib import Path
-
+from filamentModels import UserFilament
 from sqlmodel import Field, Relationship, SQLModel
-
 from printer import PrinterApi
 
 
@@ -24,6 +23,10 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True, index=True)
     name: str = Field(unique=True)
     permission: str = Field(description="admin/user")
+    # added 1-M relationships
+    user_filament: "UserFilament" | None = Relationship(
+        back_populates="user", uselist=False
+    )
 
 
 class Printer(IntPK, table=True):
